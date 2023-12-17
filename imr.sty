@@ -1,0 +1,111 @@
+%
+% This is the style guide to generate papers for the IMR
+% conference.
+%
+
+%%Set text widths
+\setlength\textwidth      {6.5in}
+\setlength\textheight     {8.75in}
+\setlength\columnsep      {0.5in}
+\setlength\topmargin {-0.5in}
+
+\setlength\parskip   {6pt plus 1pt}
+\setlength\parindent {0pt}
+
+%%Set the font size
+\renewcommand\normalsize{%
+   \@setfontsize\normalsize\@ixpt{11}
+   \abovedisplayskip 9\p@ \@plus1.8\p@ \@minus4.5\p@
+   \belowdisplayskip \abovedisplayskip
+   \abovedisplayshortskip  \z@ plus2.7\p@
+   \belowdisplayshortskip  5.4\p@ plus2.7\p@ minus3\p@
+   \let\@listi\@listI}
+\normalsize
+\renewcommand\small{%
+   \@setfontsize\small\@ixpt{9.9}%
+   \abovedisplayskip 7.7\p@ \@plus2.7\p@ \@minus3.6\p@
+   \abovedisplayshortskip \z@ \@plus1.8\p@
+   \belowdisplayshortskip 3.6\p@ \@plus1.8\p@ \@minus1.8\p@
+   \def\@listi{\leftmargin\leftmargini
+               \topsep 3.6\p@ \@plus1.8\p@ \@minus1.8\p@
+               \parsep 1.8\p@ \@plus\p@ \@minus\p@
+               \itemsep \parsep}%
+   \belowdisplayskip \abovedisplayskip
+}
+\renewcommand\footnotesize{%
+   \@setfontsize\footnotesize\@viiipt{8.6}%
+   \abovedisplayskip 5.4\p@ \@plus1.8\p@ \@minus3.6\p@
+   \abovedisplayshortskip \z@ \@plus\p@
+   \belowdisplayshortskip 2.7\p@ \@plus\p@ \@minus1.8\p@
+   \def\@listi{\leftmargin\leftmargini
+               \topsep 2.7\p@ \@plus\p@ \@minus\p@
+               \parsep 1.8\p@ \@plus\p@ \@minus\p@
+               \itemsep \parsep}%
+   \belowdisplayskip \abovedisplayskip
+}
+\renewcommand\scriptsize{\@setfontsize\scriptsize{7.2}\@vipt}
+\renewcommand\tiny{\@setfontsize\tiny\@vpt\@vpt}
+\renewcommand\large{\@setfontsize\large\@xipt{12}}
+\renewcommand\Large{\@setfontsize\Large\@xiipt{14}}
+\renewcommand\LARGE{\@setfontsize\LARGE\@xivpt{18}}
+\renewcommand\huge{\@setfontsize\huge\@xviipt{22}}
+\renewcommand\Huge{\@setfontsize\Huge\@xxpt{25}}
+
+%% Create font types for title, headings, etc.
+\def\titlefont{\LARGE\sffamily\bfseries}
+\def\authorfont{\Large\sffamily}
+\def\datefont{\large\sffamily\slshape}
+\def\sectionfont{\large\sffamily\bfseries}
+\def\subsectionfont{\large\sffamily\bfseries}
+\def\captionfont{\small\sffamily}
+
+\def\@seccntformat#1{\csname the#1\endcsname\@secpunct\quad}
+
+\renewcommand{\section}{\def\@secpunct{\rlap{.}}
+\@startsection {section}{1}
+{\z@}
+{10pt plus2pt minus2pt}
+{3pt}
+{\centering\sectionfont\uppercase}}
+
+\renewcommand{\subsection}{\def\@secpunct{}
+\@startsection{subsection}{2}
+{\z@}
+{10pt  plus2pt minus1pt}
+{1pt}
+{\subsectionfont}}
+
+\renewcommand{\subsubsection}{\def\@secpunct{}
+\@startsection{subsubsection}{3}
+{\z@}
+{10pt  plus2pt minus1pt}
+{1pt}
+{\hspace{0.2in}\subsectionfont}}
+
+%% Title, author, abstract, keywords setup/
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\title#1{\gdef\@title{\uppercase{#1}}}
+\def\@maketitle{
+
+\let \footnote \thanks
+\vskip60pt{\centering\titlefont\leftskip.5in plus1fill\rightskip\leftskip\@title\par}%
+\vskip12pt{\authorfont\centering\begin{tabular}[t]{c}\@author\end{tabular}\par}
+\vskip12pt{\datefont\centering\@date\par}\vskip72pt
+
+\begin{center}%
+{\sectionfont\uppercase{ABSTRACT}}
+\end{center}%
+\vskip1pt\normalsize\@abstract\vskip10pt
+\normalsize\textbf{Keywords:~}\@keywords\vskip20pt
+}
+
+\renewcommand{\abstract}[1]%
+{\def\@abstract{#1}}
+\newcommand{\keywords}[1]%
+{\def\@keywords{\textbf{#1}}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% change default caption header
+\def\fnum@figure{\captionfont{\bfseries\figurename~\thefigure}}
+\def\fnum@table{\captionfont{\bfseries\tablename~\thetable}}

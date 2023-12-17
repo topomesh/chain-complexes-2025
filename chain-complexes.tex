@@ -1,0 +1,485 @@
+\documentclass[twocolumn]{article}
+
+\usepackage{imr}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+\usepackage{bbm}       % for \mathbbm{1}
+\usepackage{amsmath}
+\usepackage{mathrsfs}  % for \mathscr
+\usepackage{minted}    % for including source code
+\usepackage{tikz}
+\usetikzlibrary{decorations.markings}
+
+\def\thepage {}
+\bibliographystyle{imr}
+
+\newenvironment{smallarray}[1]
+ {\null\,\vcenter\bgroup\scriptsize
+  \renewcommand{\arraystretch}{0.7}%
+  \arraycolsep=.13885em
+  \hbox\bgroup$\array{@{}#1@{}}}
+ {\endarray$\egroup\egroup\,\null}
+
+\begin{document}
+
+\title{Linear-algebraic representation and transformation of unstructured meshes}
+\author{Daniel Shapero$^1$}
+\date{
+    $^1$University of Washington, Seattle, WA, USA, shapero@uw.edu
+}
+
+\abstract{This paper will show some new approaches for implementing common transformations to the connectivity or topology of an unstructured mesh.
+The key enabling technology for our approach is to borrow ideas from algebraic topology: we use the \emph{boundary operators} of a \emph{chain complex} to represent the mesh.
+Boundary operators are really just integer matrices.
+By representing the objects of study using the language of linear algebra, we can use linear algebraic reasoning and intuition to define transformations.}
+
+\keywords{mesh generation, computational geometry, algebraic topology}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+
+% --------------------
+\section{Introduction}
+
+Our goal in this paper is to explore some of the core computational kernels for unstructured meshing.
+At the outermost level, some of the tasks that a domain scientist might want to do include: generating an unstructured mesh of some geometric shape, say for finite element analysis; refining the mesh resolution in order to better capture important features; or coarsening the mesh in order to apply fast solution procedures like the multigrid method.
+All of these outer-level problems require the ability to perform local transformations to the mesh topology.
+For example, to compute the Delaunay triangulation, the Lawson algorithm uses a sequence of bistellar flips, while the Bowyer-Watson algorithm is based on splitting star-shaped polytopes along a vertex \cite{cheng2013delaunay}.
+Algorithms for mesh coarsening, on the other hand, apply a sequence of edge collapses \textcolor{red}{cite}.
+
+Using common mesh data structures, such as the winged-edge or triangle/neighbor arrays, can make implementing these low-level transformation kernels difficult and error-prone.
+This begs the question of whether there are other mesh data structures that make common algorithms easier to implement.
+The idea of \emph{linear-algebraic representation} is to describe the mesh connectivity using linear operators between certain vector spaces or modules.
+If we can describe the topology using linear algebra, then we can transform it using linear algebra as well.
+The concept of \emph{boundary operators} from algebraic topology provides such a representation and this viewpoint has been adopted in several publications on meshing and solid modeling \cite{dicarlo2007solid}, \cite{dicarlo2014linear}, \cite{mueller2017ternary}, \cite{paoluzzi2020topological}.
+Moreover, other domains of science and engineering have seized on the idea of using linear algebra as the \emph{lingua franca} for building applications.
+For example, the GraphBLAS project aims to implement common algorithms in graph theory using linear algebra \cite{mattson2013standards}.
+
+In \textcolor{red}{Shapero (2023)}, I showed how to implement two common topological transformations -- splitting a cell on a vertex and merging adjacent cells -- using the \emph{boundary operators} from algebraic topology.
+I implemented these transformation kernels and provided demonstrations of how they can be used to compute convex hulls and Delaunay triangulations in higher dimensions.
+The main advantage of this approach is that the transformation kernels are easy to write down and to code up, using only basic linear algebra operations.
+Our contribution here is an extension of this work to an additional transformation: splitting a cell on a collection of facets.
+These transformation can also be expressed entirely with linear algebra.
+We provide a proof-of-concept application to computed constrained Delaunay meshes and 2D and 3D.
+
+
+% --------------
+\section{Theory}
+
+In this section, we'll describe some of the mathematical theory that underlies the constructions that follow.
+Understanding this theory at a profound level isn't strictly necessary in order to understand how we instrumentalize it to perform computations.
+But our objects of study are more abstract than, say, a simplex as a point set, which can be defined as the convex hull of a finite set of points.
+Many readers will scratch their heads and wonder what on earth we mean by 4 $\times$ a triangle.
+The usual introduction to algebraic topology starts with CW complexes \cite{hatcher2002algebraic}, but understanding how to get from a CW complex to a boundary operator requires some advance knowledge of homology or degree theory first.
+On the other hand, hand-waving away the issue by telling readers to think of the module operations on a chain complex as purely formal manipulations with no intrinsic meaning is not a satisfying answer either.
+Instead, we will take as our theoretical underpinning the theory of \emph{currents} on a manifold.
+The theory of currents is a kind of dual to the theory of differential forms.
+The main advantage is that it gives a clear concept for what it means to multiply a submanifold by an integer or even a real number.
+
+The spaces of currents on a manifold are the topological duals to the spaces of differential forms, which we briefly review.
+Let $X$ be a manifold, and $\omega$ a completely antisymmetric rank-$k$ tensor field on $X$.
+Such a tensor is called a differential $k$-form.
+We denote the space of all $k$-forms by $\bigwedge^kX$ or just $\bigwedge^k$ when the underlying space is clear from context.
+
+Given a $k$-form $\alpha$ and an $\ell$-form $\beta$, we can form their \emph{wedge} or \emph{exterior} product $\alpha \wedge \beta$, which is a $(k + \ell)$-form.
+The wedge product is obtained by anti-symmetrizing the tensor product of the two forms.
+We also define the \emph{exterior derivative} on forms $d$, which takes in a $k$-form and gives a $(k + 1)$-form.
+The exterior derivative can be defined axiomatically by requiring that (1) if $f$ is a scalar field or 0-form, then its exterior derivative is equal to its differential; (2) if $f$ is a scalar field, then $d(df) = 0$; and (3) $d(\alpha \wedge \beta) = d\alpha\wedge\beta + d\beta\wedge\alpha$.
+The exterior derivative generalizes all of the differential operators from classical vector calculus, including the gradient, divergence, and curl.
+From these properties, we can deduce that $d(d\alpha) = 0$ for any form $\omega$.
+We can then ask whether there are forms $\gamma$ such that $d\gamma = 0$ but for which $\gamma$ is \emph{not} the exterior derivative of any other form.
+This question is the basis for the theory of de Rham cohomology, which we assume familiarity with but do not describe further here.
+
+Most important for us is the generalized fundamental theorem of calculus or Stokes theorem.
+Given a $k$-form $\omega$ and an oriented $k$-dimensional submanifold $M$ of $X$, we can define the integral of $\omega$ on $M$.
+The generalized Stokes theorem states that
+\begin{equation}
+    \int_Md\omega = \int_{\partial M}\omega.
+\end{equation}
+This includes Green's theorem, the divergence theorem, and the classical Stokes theorem as special cases.
+
+The essential idea of currents is to think of a $k$-dimensional submanifold $M$ of $X$ as bounded linear functional on the space $\bigwedge^k$:
+\begin{equation}
+    \langle M, \omega\rangle \equiv \int_M\omega.
+\end{equation}
+We can then define vector space operations on submanifolds through their action on forms, despite the fact that these operations have no obvious point set-theoretic counterpart like a union operation.
+
+
+% TODO: Add labels to the figure and the boundary matrices, see
+% https://tex.stackexchange.com/a/59732
+\begin{figure}[h]
+    \begin{minipage}{0.48\linewidth}
+        \begin{center}
+            \begin{tikzpicture}[scale=0.75]
+                \coordinate (p1) at (1, 0){};
+                \coordinate (p2) at (3, 0){};
+                \coordinate (p3) at (2, 2){};
+                \coordinate (p4) at (0, 2){};
+
+                \draw[fill=blue!35] (p1) -- (p2) -- (p3) -- cycle;
+                \draw[fill=red!35] (p1) -- (p3) -- (p4) -- cycle;
+                \begin{scope}[
+                    very thick,
+                    decoration={markings, mark=at position 0.5 with {\arrow{>}}}
+                ]
+                    \draw[postaction={decorate}] (p1) -- (p2);
+                    \draw[postaction={decorate}] (p2) -- (p3);
+                    \draw[postaction={decorate}] (p3) -- (p4);
+                    \draw[postaction={decorate}] (p4) -- (p1);
+                    \draw[postaction={decorate}] (p1) -- (p3);
+                \end{scope}
+                \foreach \p in {p1, p2, p3, p4} {
+                    \filldraw (\p) circle (3pt);
+                }
+            \end{tikzpicture}
+        \end{center}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\linewidth}
+        {\small
+            \begin{equation*}
+                \partial_1 = \left[\begin{smallmatrix}
+                    - &   & + & - &   \\
+                    + & - &   &   & + \\
+                      & + & - &   &   \\
+                      &   &   & + & -
+                \end{smallmatrix}\right]
+            \end{equation*}
+            \begin{equation*}
+                \partial_2 = \left[\begin{smallmatrix}
+                    + & - \\
+                    + &   \\
+                    + &   \\
+                      & + \\
+                      & +
+                \end{smallmatrix}\right]
+            \end{equation*}
+        }
+    \end{minipage}
+    \caption{Pair of adjacent triangles (left) and their boundary matrices (right).}
+    \label{fig:two-triangle-chain-complex}
+\end{figure}
+
+The abstract concept of a CW complex can be made computable by representing its boundary operators as (sparse) matrices with integer entries.
+We can read off the faces and sub-faces of a particular cell by looking at which rows are non-zero in the corresponding columns of the boundary matrices.
+Equation \eqref{eq:ddzero} is easy to verify in practice and guarantees the topological validity of the data structure.
+See figure \ref{fig:two-triangle-chain-complex} for an illustration of a simple topology together with the corresponding boundary operators.
+
+We'll introduce one final conceit that makes later constructions much more elegant.
+The definition above assumes that the chain complex stops at $\mathscr{C}_0$ -- formal linear combinations of vertices.
+Instead, we will add a \emph{bottom} module $\mathscr{C}_{-1}$ consisting of a single cell $\bot$ of dimension -1.
+We then define the boundary of every vertex $v_i$ to be $+\bot$.
+If we write $\mathbbm{1}$ for the column vector of all 1s, then $\partial_0 = \mathbbm{1}^*$, i.e. the row vector of all 1s.
+The addition of this bottom cell is especially convenient because the condition $\partial_0\partial_1 = 0$ implies that the boundary of every edge $e$ has a negative and a positive vertex: $\partial e = v_i - v_j$ for some $i$, $j$.
+We cannot have, for example, $\partial e = v_i + v_j$, which would be undesirable.
+
+
+% -----------------------
+\section{Transformations}
+
+If we choose to represent mesh topologies using boundary operators, we can describe transformations through linear algebra.
+Phrasing the problem in this way makes verifying correctness easy.
+
+First, observe that if $A$, $B$ are integer matrices such that the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$, then the matrices
+\begin{equation}
+    \partial_k' = \partial_k\cdot A, \quad \partial_{k + 1}' = B\cdot\partial_{k + 1}
+\end{equation}
+still satisfy $\partial_k'\cdot\partial_{k + 1}' = 0$.
+A particular case is $A\cdot B = I$, which includes permutations of the cell ordering.
+The more general case regarding the image of $A\cdot B$ is needed for some irreversible transformations.
+
+\subsection{Merging}
+
+A \emph{merge} of a set of $k$-cells replaces them with a single cell (provided that their union is simply-connected).
+Merging is a column operation on the matrix $\partial_k$.
+In the simplest case, the result column is the sum of all the columns to be merged, but in general we might need to flip some signs:
+\begin{align}
+    \partial_k' & = \partial_k\cdot\text{diag}(s_0, \ldots, s_m)\cdot\mathbbm{1}, \\
+    \partial_{k + 1}' & = \left[\begin{matrix} 0 \ldots 1 \ldots 0\end{matrix}\right]\partial_{k + 1}. \label{eq:merge-k+1}
+\end{align}
+where $s_i$ are all $\pm 1$.
+The signs are chosen so that any higher-dimensional cell $\sigma$ has the same incidence with respect to any of the cells $\tau$ to be merged.
+The transformation to the rows of $\partial_{k + 1}$ collapses all incidence to any of the desired $k$-cells into incidence to the merged $k$-cell.
+For merging cells of top dimension $n$, there are no higher-dimensional cells to apply equation \eqref{eq:merge-k+1} to and this step is left out.
+
+\emph{Edge collapsing}, the key transformation in surface simplification algorithms \cite{gueziec1995surface}, is a merge of two vertices.
+
+
+\subsection{Splitting}
+
+A \emph{split} divides up the union of several polytopes along a vertex.
+The key correctness criteria for this operation are that (1) every newly-created polytope contains the splitting vertex and (2) the boundary of the sum of all polytopes does not change.
+We'll describe the 2D case first and then proceed to arbitrary dimensions.
+
+Suppose that a collection of adjacent polygons has the boundary operators $\partial_1$ and $\partial_2$.
+We first have to draw edges between the new vertex and all the vertices of the polygon.
+The orientation of these new edges is arbitrary, so we can assume that every edge goes from the splitting vertex $v$ to the polygon vertices.
+Another way of stating this is that every new edge $e$ is negatively-incident to $v$ and positively-incident to some polygon vertex.
+In terms of matrices, the new 1-boundary operator is
+\begin{equation}
+    \partial_1' = \left[\begin{matrix}\partial_1 & I \\ 0 & -\mathbbm{1}^*\end{matrix}\right]
+    \label{eq:split-1-2d}
+\end{equation}
+where $I$ is the identity matrix.
+The key step here is defining the 2-boundary matrix:
+\begin{equation}
+    \partial_2' = \left[\begin{matrix}\text{diag}(\partial_2\cdot\mathbbm{1}) \\ -\partial_1\cdot\text{diag}(\partial_2\cdot\mathbbm{1})\end{matrix}\right]
+\end{equation}
+A rudimentary calculation shows that $\partial_1'\partial_2' = 0$.
+Since $\text{diag}(z)\cdot\mathbbm{1} = z$ for any vector $z$, we also find that
+\begin{equation}
+    \partial_2'\mathbbm{1} = \left[\begin{matrix}\partial_2\mathbbm{1} \\ 0\end{matrix}\right]
+\end{equation}
+or in other words the new polygon has the same boundary as the old.
+Figure \ref{fig:split-transformation} illustrates the split transformation on a single quadrilateral and shows the boundary matrices before and after.
+
+\begin{figure}[h]
+    \begin{center}
+        \begin{tikzpicture}[scale=0.75]
+            \newcommand*{\defcoords}{
+                \coordinate (p0) at (1.5, 1){};
+                \coordinate (p1) at (1, 0){};
+                \coordinate (p2) at (3, 0){};
+                \coordinate (p3) at (2, 2){};
+                \coordinate (p4) at (0, 2){};
+            }
+
+            \begin{scope}[
+                very thick,
+                decoration={markings, mark=at position 0.5 with {\arrow{>}}}
+            ]
+                \defcoords
+                \draw[postaction={decorate}] (p1) -- (p2);
+                \draw[postaction={decorate}] (p2) -- (p3);
+                \draw[postaction={decorate}] (p3) -- (p4);
+                \draw[postaction={decorate}] (p4) -- (p1);
+
+                \foreach \p in {p1, p2, p3, p4} {
+                    \filldraw (\p) circle (2pt);
+                }
+            \end{scope}
+
+            \begin{scope}[
+                very thick,
+                shift={(4, 0)},
+                decoration={markings, mark=at position 0.5 with {\arrow{>}}}
+            ]
+                \defcoords
+                \draw[postaction={decorate}] (p1) -- (p2);
+                \draw[postaction={decorate}] (p2) -- (p3);
+                \draw[postaction={decorate}] (p3) -- (p4);
+                \draw[postaction={decorate}] (p4) -- (p1);
+                \draw[postaction={decorate}] (p0) -- (p2);
+                \draw[postaction={decorate}] (p0) -- (p3);
+                \draw[postaction={decorate}] (p0) -- (p4);
+                \draw[postaction={decorate}] (p0) -- (p1);
+
+                \foreach \p in {p0, p1, p2, p3, p4} {
+                    \filldraw (\p) circle (2pt);
+                }
+            \end{scope}
+        \end{tikzpicture}
+    \end{center}
+
+    \begin{equation*}
+        \partial_1 = \left[\begin{smallmatrix}
+            - &   &   & + \\
+            + & - &   &   \\
+              & + & - &   \\
+              &   & + & -
+        \end{smallmatrix}\right],
+        \quad
+        \partial_2 = \left[\begin{smallmatrix}
+            + \\ + \\ + \\ +
+        \end{smallmatrix}\right]
+    \end{equation*}
+
+    \begin{equation*}
+        \partial_1' = \left[\begin{smallarray}{cccc|cccc}
+            - &   &   & + & + &   &   &   \\
+            + & - &   &   &   & + &   &   \\
+              & + & - &   &   &   & + &   \\
+              &   & + & - &   &   &   & + \\
+            \hline
+              &   &   &   & - & - & - & -
+        \end{smallarray}\right], \quad
+        \partial_2' = \left[\begin{smallarray}{cccc}
+            + &   &   &   \\
+              & + &   &   \\
+              &   & + &   \\
+              &   &   & + \\
+            \hline
+            + &   &   & - \\
+            - & + &   &   \\
+              & - & + &   \\
+              &   & - & +
+        \end{smallarray}\right]
+    \end{equation*}
+
+    \caption{Quadrilateral before and after splitting on a new vertex in the center (top) and boundary matrices before and after (bottom).}
+    \label{fig:split-transformation}
+\end{figure}
+
+We can get an idea for how to extend this to $n$ dimensions by remembering that $\mathbbm{1}^* = \partial_0$ in equation \eqref{eq:split-1-2d}.
+This suggests the transformation
+\begin{align}
+    \partial_k' & = \left[\begin{matrix}\partial_k & I \\ 0 & -\partial_{k - 1}\end{matrix}\right] \label{eq:split-k} \\
+    \partial_n' & = \left[\begin{matrix}\text{diag}(\partial_n\cdot\mathbbm{1}) \\ -\partial_{n - 1}\text{diag}(\partial_n\cdot\mathbbm{1})\end{matrix}\right] \label{eq:split-n}
+\end{align}
+Again, a rudimentary calculation shows that the fundamental equation \eqref{eq:ddzero} still holds and that the new polytopes have the same boundary as the old.
+
+Equation \eqref{eq:split-k} has appeared before in the literature on homological algebra as the expression for the boundary operators of the \emph{cone} of a space \cite{gelfand1994homological}.
+To our knowledge, using these equations for doing real computations is entirely new.
+
+The Bowyer-Watson algorithm for Delaunay triangulation and all common algorithms for computing convex hulls only require the split transformation \cite{cheng2013delaunay}.
+
+\subsection{Splitting and merging}
+
+Other transformations can be defined by combining a sequence of splits and merges.
+For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges and figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
+(We've shown an initial merge step for illustrative purposes, but this merge is actually part of the subsequent split.)
+
+\begin{figure}[h]
+    \tikzset{ec/.style={every coordinate/.try}}
+
+    \begin{center}
+    \begin{tikzpicture}[scale=0.4]
+        \coordinate (p0) at (1.5, 1){};
+        \coordinate (p1) at (1, 0){};
+        \coordinate (p2) at (3, 0){};
+        \coordinate (p3) at (2, 2){};
+        \coordinate (p4) at (0, 2){};
+
+        \begin{scope}[very thick]
+            \draw (p1) -- (p2) -- (p4) -- cycle;
+            \draw (p4) -- (p3) -- (p2) -- cycle;
+
+            \foreach \p in {p1, p2, p3, p4} {
+                \filldraw (\p) circle (3pt);
+            }
+        \end{scope}
+
+        \begin{scope}[very thick, every coordinate/.style={shift={(3.5,0)}}]
+            \draw ([ec]p1) -- ([ec]p2) -- ([ec]p3) -- ([ec]p4) -- cycle;
+
+            \foreach \p in {p1, p2, p3, p4} {
+                \filldraw ([ec]\p) circle (3pt);
+            }
+        \end{scope}
+
+        \begin{scope}[very thick, every coordinate/.style={shift={(7,0)}}]
+            \draw ([ec]p0) -- ([ec]p1) -- ([ec]p2) -- cycle;
+            \draw ([ec]p0) -- ([ec]p2) -- ([ec]p3) -- cycle;
+            \draw ([ec]p0) -- ([ec]p3) -- ([ec]p4) -- cycle;
+            \draw ([ec]p0) -- ([ec]p4) -- ([ec]p1) -- cycle;
+
+            \foreach \p in {p0, p1, p2, p3, p4} {
+                \filldraw ([ec]\p) circle (3pt);
+            }
+        \end{scope}
+
+        \begin{scope}[very thick, every coordinate/.style={shift={(10.5,0)}}]
+            \draw ([ec]p1) -- ([ec]p2) -- ([ec]p3) -- cycle;
+            \draw ([ec]p3) -- ([ec]p4) -- ([ec]p1) -- cycle;
+
+            \foreach \p in {p0, p1, p2, p3, p4} {
+                \filldraw ([ec]\p) circle (3pt);
+            }
+        \end{scope}
+
+        \begin{scope}[very thick, every coordinate/.style={shift={(14,0)}}]
+            \draw ([ec]p1) -- ([ec]p2) -- ([ec]p3) -- cycle;
+            \draw ([ec]p3) -- ([ec]p4) -- ([ec]p1) -- cycle;
+
+            \foreach \p in {p1, p2, p3, p4} {
+                \filldraw ([ec]\p) circle (3pt);
+            }
+        \end{scope}
+
+        \begin{scope}[very thick]
+            \draw[->] (2, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below, align=center] {merge\\triangles};
+            \draw[->] (5.5, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below] {split};
+            \draw[->] (9.0, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below, align=center] {merge\\triangles};
+            \draw[->] (12.5, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below, align=center] {merge\\edges};
+        \end{scope}
+    \end{tikzpicture}
+    \end{center}
+    \caption{A 2-2 flip, implemented as a sequence of merges and splits.
+    The vertex added by splitting the quadrilateral is deleted when the two edges are merged in the final transformation.}
+    \label{fig:2-2-flip}
+\end{figure}
+
+\begin{figure}[h]
+    \begin{center}
+        \input{figures/tetrahedra.tikz}
+    \end{center}
+    \caption{A 2-3 flip implemented as a sequence of merges and splits.
+    We've shown the tetrahedra in an ``exploded'' view to help with visualization.}
+    \label{fig:2-3-flip}
+\end{figure}
+
+A few papers have proposed using multi-cell transformations for 3D mesh improvement \cite{klingner2008aggressive}.
+Multi-cell transformations are more complex than 2-3 or 3-2 flips, but \cite{misztal2009tetrahedral} showed that they can be implemented as a sequence of flips.
+Using the boundary operators might make it possible to implement complex transformations with less effort.
+The split transformation that we derived here is based on computing the topological cone of a space and then removing the base of the cone.
+Multiface retriangulation, as advocated in \cite{misztal2009tetrahedral}, is a transformation of a \emph{suspension}, a related construction in algebraic topology \cite{hatcher2002algebraic}.
+
+
+% ---------------------
+\section{Demonstration}
+
+As a proof of concept, we developed a software package called \emph{zmsh} which implements the split transformation defined above \cite{shapero2023zmsh}.
+The source code for the split transformation is shown in figure \ref{fig:split-source-code}.
+\begin{figure}
+    \begin{minted}[fontsize=\footnotesize,linenos]{python}
+import numpy as np
+from typing import List
+
+def split(D: List[np.ndarray]) -> List[np.ndarray]:
+    # Create the boundary matrices for 1 <= k < n
+    n_vertices = D[0].shape[1]
+    E = [np.ones((1, n_vertices + 1), int)]
+    for k in range(1, len(D) - 1):
+        n_cells = D[k].shape[1]
+        n_sub_faces, n_faces = D[k - 1].shape
+        I = np.identity(n_faces, int)
+        Z = np.zeros((n_sub_faces, n_cells), int)
+        E_k = np.block([[D[k], I], [Z, -D[k - 1]]])
+        E.append(E_k)
+
+    # Create the top-dimensional boundary matrix
+    C = np.diag(np.sum(D[-1], axis=1))
+    E_n = np.vstack((C, -D[-2] @ C))
+    E.append(E_n)
+    return E
+    \end{minted}
+    \caption{Python source code for the split transformation.
+    Line 13 corresponds to equation \eqref{eq:split-k}; lines 17 and 18 correspond to equation \eqref{eq:split-n}.
+    The real version has some additional logic to remove empty cells.}
+    \label{fig:split-source-code}
+\end{figure}
+We used the split transformation to implement a convex hull algorithm that works in arbitrary dimensions.
+To test the convex hull code, we used (1) random point sets up to dimension 5 and (2) several synthetic input sets with various degeneracies such as coplanarity.
+For geometric predicates, we used the Python standard library's built-in routines to convert a floating point value exactly to a ratio of big integers.
+
+
+% ------------------
+\section{Conclusion}
+
+Doubly-connected edge lists have historically been popular for mesh generation because they offer a simple interface for traversing the topology \cite{guibas1985primitives}.
+Here we propose that boundary operators are an ideal representation if the goal is to perform topological transformations.
+This idea has appeared before, for example in the work of DiCarlo and others \cite{dicarlo2007solid}.
+
+Boundary operators are only necessary for representing a small patch of the topology at a time.
+Once the transformed patch is computed, it can be translated back to a set of simplexes.
+Boundary operators are useful for describing non-simplicial intermediate states of a transformation; they are not space-optimal for describing an entire simplicial complex.
+
+When the objects of study can be represented as linear operators, we can apply linear algebraic reasoning to define transformations and verify that they preserve all of the important invariants.
+The condition in equation \eqref{eq:ddzero} that the product of two boundary operators is zero is a very powerful invariant for ensuring the validity of the underlying topology.
+
+
+\bibliography{chain-complexes.bib}
+
+\end{document}

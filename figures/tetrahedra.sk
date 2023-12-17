@@ -1,0 +1,124 @@
+def tetra2 {
+    def p0 (1, 0, 0)
+    def p1 (cos(120), sin(120), 0)
+    def p2 (cos(240), sin(240), 0)
+    def p3 (0, 0, 1)
+
+    polygon[line style=very thick] (p1)(p2)(p3)
+    polygon[line style=very thick] (p3)(p2)(p0)
+    polygon[line style=very thick] (p0)(p1)(p3)
+    polygon[line style=very thick] (p2)(p1)(p0)
+
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p1)(p2)(p3)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p3)(p2)(p0)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p0)(p1)(p3)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p2)(p1)(p0)
+}
+
+
+def tetra3 {
+    def p0 (1, 0, 0)
+    def p1 (cos(120), sin(120), 0)
+    def p2 (0, 0, -1)
+    def p3 (0, 0, 1)
+
+    polygon[line style=very thick] (p1)(p2)(p3)
+    polygon[line style=very thick] (p3)(p2)(p0)
+    polygon[line style=very thick] (p0)(p1)(p3)
+    polygon[line style=very thick] (p2)(p1)(p0)
+
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p1)(p2)(p3)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p3)(p2)(p0)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p0)(p1)(p3)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p2)(p1)(p0)
+}
+
+
+def tetra6 {
+    def p0 (0, 0, 0)
+    def p1 (1, 0, 0)
+    def p2 (cos(120), sin(120), 0)
+    def p3 (0, 0, 1)
+
+    polygon[line style=very thick] (p1)(p2)(p3)
+    polygon[line style=very thick] (p3)(p2)(p0)
+    polygon[line style=very thick] (p0)(p1)(p3)
+    polygon[line style=very thick] (p2)(p1)(p0)
+
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p1)(p2)(p3)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p3)(p2)(p0)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p0)(p1)(p3)
+    polygon[lay=over, fill style=fill=none, line style=dotted] (p2)(p1)(p0)
+}
+
+
+def step0 {
+    put {translate([0, 0, 0.5])} {tetra2}
+    put {rotate(180, (0, 0, 0), [1, 0, 0]) then translate([0, 0, -0.5])} {tetra2}
+}
+
+
+def step1 {
+    {tetra2}
+    put {rotate(180, (0, 0, 0), [1, 0, 0])} {tetra2}
+}
+
+
+def step2 {
+    def r 0.5
+    def top {
+        put {translate([r * cos(60), r * sin(60), 0])} {tetra6}
+        put {rotate(120, (0, 0, 0), [0, 0, 1]) then translate([-r, 0, 0])} {tetra6}
+        put {rotate(240, (0, 0, 0), [0, 0, 1]) then translate([r * cos(60), -r * sin(60), 0])} {tetra6}
+    }
+
+    put {translate ([0, 0, r])} {top}
+    put {rotate(180, (0, 0, 0), [1, 0, 0]) then translate([0, 0, -r])} {top}
+}
+
+
+def step3 {
+    def r 0.5
+    def top {
+        put {translate([r * cos(60), r * sin(60), 0])} {tetra6}
+        put {rotate(120, (0, 0, 0), [0, 0, 1]) then translate([-r, 0, 0])} {tetra6}
+        put {rotate(240, (0, 0, 0), [0, 0, 1]) then translate([r * cos(60), -r * sin(60), 0])} {tetra6}
+    }
+
+    {top}
+    put {rotate(180, (0, 0, 0), [1, 0, 0])} {top}
+}
+
+
+def step4 {
+    def r 0.5
+    put {translate([r * cos(60), r * sin(60), 0])} {tetra3}
+    put {rotate(120, (0, 0, 0), [0, 0, 1]) then translate([-r, 0, 0])} {tetra3}
+    put {rotate(240, (0, 0, 0), [0, 0, 1]) then translate([r * cos(60), -r * sin(60), 0])} {tetra3}
+}
+
+
+def theta 1
+def a 2.5
+def eye (0, -7.5, 5.0)
+def look_at (0.0, 0.0, 0.0)
+put {view((eye), (look_at))}
+
+{
+    {put {rotate(theta, (0, 0, 0), [0, 0, 1])} {step0}}
+    {put {rotate(theta, (0, 0, 0), [0, 0, 1]) then translate([2, 0, 0])} {step1}}
+    {put {rotate(theta, (0, 0, 0), [0, 0, 1]) then translate([4.5, 0, 0])} {step2}}
+    {put {rotate(theta, (0, 0, 0), [0, 0, 1]) then translate([7.5, 0, 0])} {step3}}
+    {put {rotate(theta, (0, 0, 0), [0, 0, 1]) then translate([10.5, 0, 0])} {step4}}
+}
+
+special |
+\begin{scope}[very thick]
+    \draw[->] (-0.1, -0.9) arc[start angle=180, end angle=360, radius=0.5] node[midway, below, align=center] {merge\\tetrahedra};
+    \draw[->] (1.5, -0.9) arc[start angle=180, end angle=360, radius=0.5] node[midway, below, align=center] {split};
+    \draw[->] (3.1, -0.9) arc[start angle=180, end angle=360, radius=0.5] node[midway, below, align=center] {merge\\tetrahedra};
+    \draw[->] (4.8, -0.9) arc[start angle=180, end angle=360, radius=0.5] node[midway, below, align=center] {merge\\triangles};
+\end{scope}
+|
+
+global { language tikz }
