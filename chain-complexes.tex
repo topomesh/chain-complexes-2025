@@ -43,25 +43,24 @@ By representing the objects of study using the language of linear algebra, we ca
 % --------------------
 \section{Introduction}
 
-Our goal in this paper is to explore some of the core computational kernels for unstructured meshing.
-At the outermost level, some of the tasks that a domain scientist might want to do include: generating an unstructured mesh of some geometric shape, say for finite element analysis; refining the mesh resolution in order to better capture important features; or coarsening the mesh in order to apply fast solution procedures like the multigrid method.
-All of these outer-level problems require the ability to perform local transformations to the mesh topology.
+In this paper, we'll explore some of the computational kernels for unstructured meshing.
+Nearly all problems in meshing require the ability to perform local transformations to the mesh topology.
 For example, to compute the Delaunay triangulation, the Lawson algorithm uses a sequence of bistellar flips, while the Bowyer-Watson algorithm is based on splitting star-shaped polytopes along a vertex \cite{cheng2013delaunay}.
-Algorithms for mesh coarsening, on the other hand, apply a sequence of edge collapses \textcolor{red}{cite}.
+Algorithms for mesh coarsening, on the other hand, apply a sequence of edge or face collapses \cite{cignoni1998comparison}.
+Implementing these low-level transformation kernels on common mesh data structures can be difficult and error-prone.
+Are there other mesh data structures that make common algorithms easier to implement?
 
-Using common mesh data structures, such as the winged-edge or triangle/neighbor arrays, can make implementing these low-level transformation kernels difficult and error-prone.
-This begs the question of whether there are other mesh data structures that make common algorithms easier to implement.
-The idea of \emph{linear-algebraic representation} is to describe the mesh connectivity using linear operators between certain vector spaces or modules.
-If we can describe the topology using linear algebra, then we can transform it using linear algebra as well.
-The concept of \emph{boundary operators} from algebraic topology provides such a representation and this viewpoint has been adopted in several publications on meshing and solid modeling \cite{dicarlo2007solid}, \cite{dicarlo2014linear}, \cite{mueller2017ternary}, \cite{paoluzzi2020topological}.
-Moreover, other domains of science and engineering have seized on the idea of using linear algebra as the \emph{lingua franca} for building applications.
+The idea of \emph{linear-algebraic representation} is to describe the mesh topology using a sequence of linear operators between certain vector spaces or modules.
+\textbf{If we can describe the mesh topology using linear algebra, then we can transform it using linear algebra as well.}
+This viewpoint has been adopted in several publications on meshing and solid modeling \cite{dicarlo2007solid}, \cite{dicarlo2014linear}, \cite{mueller2017ternary}, \cite{paoluzzi2020topological}.
+Other domains of science and engineering have seized on the idea of using linear algebra as the \emph{lingua franca} for building applications as well.
 For example, the GraphBLAS project aims to implement common algorithms in graph theory using linear algebra \cite{mattson2013standards}.
 
-In \textcolor{red}{Shapero (2023)}, I showed how to implement two common topological transformations -- splitting a cell on a vertex and merging adjacent cells -- using the \emph{boundary operators} from algebraic topology.
-I implemented these transformation kernels and provided demonstrations of how they can be used to compute convex hulls and Delaunay triangulations in higher dimensions.
-The main advantage of this approach is that the transformation kernels are easy to write down and to code up, using only basic linear algebra operations.
+In \textcolor{red}{Shapero (2023)}, I showed how to implement two transformations -- splitting a cell on a vertex and merging adjacent cells -- on the linear-algebraic representation of a polygonal mesh.
+I then demonstrated how to compute convex hulls and Delaunay triangulations in higher dimensions using these kernels.
+The main advantage of this linear-algebraic approach is that the transformation kernels are easy to write down and to code.
 Our contribution here is an extension of this work to an additional transformation: splitting a cell on a collection of facets.
-These transformation can also be expressed entirely with linear algebra.
+This transformation can also be expressed entirely with linear algebra.
 We provide a proof-of-concept application to computed constrained Delaunay meshes and 2D and 3D.
 
 
