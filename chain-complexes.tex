@@ -70,40 +70,57 @@ We provide a proof-of-concept application to computed constrained Delaunay meshe
 In this section, we'll describe some of the mathematical theory that underlies the constructions that follow.
 Understanding this theory at a profound level isn't strictly necessary in order to understand how we instrumentalize it to perform computations.
 But our objects of study are more abstract than, say, a simplex as a point set, which can be defined as the convex hull of a finite set of points.
-Many readers will scratch their heads and wonder what on earth we mean by 4 $\times$ a triangle.
+Many readers will scratch their heads and wonder what on earth we mean by multiplying a number and a triangle.
 The usual introduction to algebraic topology starts with CW complexes \cite{hatcher2002algebraic}, but understanding how to get from a CW complex to a boundary operator requires some advance knowledge of homology or degree theory first.
 On the other hand, hand-waving away the issue by telling readers to think of the module operations on a chain complex as purely formal manipulations with no intrinsic meaning is not a satisfying answer either.
 Instead, we will take as our theoretical underpinning the theory of \emph{currents} on a manifold.
 The theory of currents is a kind of dual to the theory of differential forms.
 The main advantage is that it gives a clear concept for what it means to multiply a submanifold by an integer or even a real number.
 
-The spaces of currents on a manifold are the topological duals to the spaces of differential forms, which we briefly review.
-Let $X$ be a manifold, and $\omega$ a completely antisymmetric rank-$k$ tensor field on $X$.
+First, we briefly review the theory of differential forms.
+Let $\Omega$ be a manifold, and $u$ a completely antisymmetric rank-$k$ tensor field on $\Omega$.
 Such a tensor is called a differential $k$-form.
 We denote the space of all $k$-forms by $\bigwedge^kX$ or just $\bigwedge^k$ when the underlying space is clear from context.
 
-Given a $k$-form $\alpha$ and an $\ell$-form $\beta$, we can form their \emph{wedge} or \emph{exterior} product $\alpha \wedge \beta$, which is a $(k + \ell)$-form.
-The wedge product is obtained by anti-symmetrizing the tensor product of the two forms.
+Given a $k$-form $u$ and an $\ell$-form $v$, we can form their \emph{wedge} or \emph{exterior} product $u \wedge v$, which is a $(k + \ell)$-form.
+The wedge product is obtained by anti-symmetrizing the outer product of the two forms.
+
 We also define the \emph{exterior derivative} on forms $d$, which takes in a $k$-form and gives a $(k + 1)$-form.
-The exterior derivative can be defined axiomatically by requiring that (1) if $f$ is a scalar field or 0-form, then its exterior derivative is equal to its differential; (2) if $f$ is a scalar field, then $d(df) = 0$; and (3) $d(\alpha \wedge \beta) = d\alpha\wedge\beta + d\beta\wedge\alpha$.
-The exterior derivative generalizes all of the differential operators from classical vector calculus, including the gradient, divergence, and curl.
-From these properties, we can deduce that $d(d\alpha) = 0$ for any form $\omega$.
-We can then ask whether there are forms $\gamma$ such that $d\gamma = 0$ but for which $\gamma$ is \emph{not} the exterior derivative of any other form.
-This question is the basis for the theory of de Rham cohomology, which we assume familiarity with but do not describe further here.
+The exterior derivative can be defined axiomatically by requiring that (1) if $f$ is a scalar field or 0-form, then its exterior derivative is equal to its differential; (2) if $f$ is a scalar field, then $d(df) = 0$; and (3) $d(u \wedge v) = du\wedge v + dv\wedge u$.
+From these properties, we can deduce that $d(du) = 0$ for any form $\omega$.
 
 Most important for us is the generalized fundamental theorem of calculus or Stokes theorem.
-Given a $k$-form $\omega$ and an oriented $k$-dimensional submanifold $M$ of $X$, we can define the integral of $\omega$ on $M$.
+Given a $k$-form $u$ and a smooth, oriented $k$-dimensional submanifold $M$ of $\Omega$, we can define the integral of $u$ on $M$.
 The generalized Stokes theorem states that
 \begin{equation}
-    \int_Md\omega = \int_{\partial M}\omega.
+    \int_Mdu = \int_{\partial M}u.
 \end{equation}
 This includes Green's theorem, the divergence theorem, and the classical Stokes theorem as special cases.
 
-The essential idea of currents is to think of a $k$-dimensional submanifold $M$ of $X$ as bounded linear functional on the space $\bigwedge^k$:
+A $k$-\emph{current} is a continuous linear functional on $\bigwedge^k\Omega$.
+We denote the action of a current $J$ on a form $u$ by $\langle J, u\rangle$ and the space of all $k$-currents by $\mathscr{C}^k(\Omega)$.
+We can think of a submanifold $M$ as defining a bounded linear functional on $\bigwedge^k\Omega$ by integration:
 \begin{equation}
-    \langle M, \omega\rangle \equiv \int_M\omega.
+    \langle M, u\rangle \equiv \int_M u.
 \end{equation}
-We can then define vector space operations on submanifolds through their action on forms, despite the fact that these operations have no obvious point set-theoretic counterpart like a union operation.
+(Here we'll abuse notation a little bit by writing both the submanifold and the linear functional as ``$M$''.
+Some texts opt to use a different notation for the current induced by a submanifold to disambiguate between the two but this level of detail won't be necessary.)
+Given two $k$-dimensional submanifolds $M$ and $N$ and real numbers $\alpha$ and $\beta$, we can define their linear combination $\alpha \cdot M + \beta\cdot N$ by how they act on forms:
+\begin{equation}
+    \langle \alpha M + \beta N, u\rangle = \alpha\int_M u + \beta\int_N u.
+\end{equation}
+A current $J$ is called \emph{integral} if
+\begin{equation}
+    \langle J, u\rangle = \alpha\int_Mu
+\end{equation}
+for some integer $\alpha$ and some submanifold $M$.
+
+We can then define the \emph{boundary} $\partial J$ of a current $J$ as the formal adjoint of the exterior derivative:
+\begin{equation}
+    \langle\partial J, u\rangle \equiv \langle J, du\rangle.
+\end{equation}
+When $J$ is an integral current, this definition agrees with the generalized Stokes theorem.
+It also implies that $\partial(\partial J) = 0$, since $d(du) = 0$ for any differential form $u$.
 
 
 % TODO: Add labels to the figure and the boundary matrices, see
@@ -161,18 +178,6 @@ We can then define vector space operations on submanifolds through their action 
     \label{fig:two-triangle-chain-complex}
 \end{figure}
 
-The abstract concept of a CW complex can be made computable by representing its boundary operators as (sparse) matrices with integer entries.
-We can read off the faces and sub-faces of a particular cell by looking at which rows are non-zero in the corresponding columns of the boundary matrices.
-Equation \eqref{eq:ddzero} is easy to verify in practice and guarantees the topological validity of the data structure.
-See figure \ref{fig:two-triangle-chain-complex} for an illustration of a simple topology together with the corresponding boundary operators.
-
-We'll introduce one final conceit that makes later constructions much more elegant.
-The definition above assumes that the chain complex stops at $\mathscr{C}_0$ -- formal linear combinations of vertices.
-Instead, we will add a \emph{bottom} module $\mathscr{C}_{-1}$ consisting of a single cell $\bot$ of dimension -1.
-We then define the boundary of every vertex $v_i$ to be $+\bot$.
-If we write $\mathbbm{1}$ for the column vector of all 1s, then $\partial_0 = \mathbbm{1}^*$, i.e. the row vector of all 1s.
-The addition of this bottom cell is especially convenient because the condition $\partial_0\partial_1 = 0$ implies that the boundary of every edge $e$ has a negative and a positive vertex: $\partial e = v_i - v_j$ for some $i$, $j$.
-We cannot have, for example, $\partial e = v_i + v_j$, which would be undesirable.
 
 
 % -----------------------
