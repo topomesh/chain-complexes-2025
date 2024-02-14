@@ -86,107 +86,65 @@ Instead, we will take as our theoretical underpinning the theory of \emph{curren
 The theory of currents is a kind of dual to the theory of differential forms.
 The main advantage is that it gives a clear concept for what it means to multiply a submanifold by an integer or even a real number.
 
-First, we briefly review the theory of differential forms.
-Let $\Omega$ be a manifold, and $u$ a completely antisymmetric rank-$k$ tensor field on $\Omega$.
-Such a tensor is called a differential $k$-form.
-We denote the space of all $k$-forms by $\bigwedge^kX$ or just $\bigwedge^k$ when the underlying space is clear from context.
+\subsection{Differential forms}
+
+Let $\Omega$ be a compact, orientable manifold, and $u$ a completely antisymmetric tensor field of rank $k$ on $\Omega$.
+Such a tensor field is called a \emph{differential $k$-form}.
+We will write the space of all $k$-forms by $\mathscr{F}_k(\Omega)$ or just $\mathscr{F}_k$ when the underlying manifold is clear from context.
 
 Given a $k$-form $u$ and an $\ell$-form $v$, we can form their \emph{wedge} or \emph{exterior} product $u \wedge v$, which is a $(k + \ell)$-form.
 The wedge product is obtained by anti-symmetrizing the outer product of the two forms.
 
-We also define the \emph{exterior derivative} on forms $d$, which takes in a $k$-form and gives a $(k + 1)$-form.
-The exterior derivative can be defined axiomatically by requiring that (1) if $f$ is a scalar field or 0-form, then its exterior derivative is equal to its differential; (2) if $f$ is a scalar field, then $d(df) = 0$; and (3) $d(u \wedge v) = du\wedge v + dv\wedge u$.
-From these properties, we can deduce that $d(du) = 0$ for any form $\omega$.
+The \emph{exterior derivative} on forms $d$ is a differential operator which takes in a $k$-form and gives a $(k + 1)$-form.
+The exterior derivative can be defined axiomatically by requiring that (1) if $f$ is a scalar field or 0-form, then its exterior derivative is equal to its differential; (2) if $f$ is a scalar field, then $d(df) = 0$; and (3) $d(u \wedge v) = du\wedge v + (-1)^k u \wedge dv$.
+From these properties, we can deduce that $d(du) = 0$ for any form $u$.
 
-Most important for us is the generalized fundamental theorem of calculus or Stokes theorem.
-Given a $k$-form $u$ and a smooth, oriented $k$-dimensional submanifold $M$ of $\Omega$, we can define the integral of $u$ on $M$.
+Most important for us is the generalized \emph{Stokes theorem}.
+Given a $k$-form $u$ and an oriented $k$-dimensional submanifold $M$, we can define the integral of $u$ on $M$.
 The generalized Stokes theorem states that
 \begin{equation}
     \int_Mdu = \int_{\partial M}u.
 \end{equation}
 This includes Green's theorem, the divergence theorem, and the classical Stokes theorem as special cases.
 
-A $k$-\emph{current} is a continuous linear functional on $\bigwedge^k\Omega$.
+\subsection{Currents}
+
+A $k$-\emph{current} is a continuous linear functional from the space of $k$-forms $\mathscr{F}_k(\Omega)$ to the reals.
 We denote the action of a current $J$ on a form $u$ by $\langle J, u\rangle$ and the space of all $k$-currents by $\mathscr{C}^k(\Omega)$.
-We can think of a submanifold $M$ as defining a bounded linear functional on $\bigwedge^k\Omega$ by integration:
+The space of $k$-currents naturally has the structure of a vector space.
+Currents are exactly analogous to spaces of distributions as defined in PDE theory, but with the extra tensorial character of differential forms.
+
+We can think of an oriented submanifold $M$ as defining a $k$-current by integration:
 \begin{equation}
     \langle M, u\rangle \equiv \int_M u.
 \end{equation}
-(Here we'll abuse notation a little bit by writing both the submanifold and the linear functional as ``$M$''.
+(Here we'll abuse notation a little bit by writing both the oriented submanifold and the linear functional as ``$M$''.
 Some texts opt to use a different notation for the current induced by a submanifold to disambiguate between the two but this level of detail won't be necessary.)
-Given two $k$-dimensional submanifolds $M$ and $N$ and real numbers $\alpha$ and $\beta$, we can define their linear combination $\alpha \cdot M + \beta\cdot N$ by how they act on forms:
-\begin{equation}
-    \langle \alpha M + \beta N, u\rangle = \alpha\int_M u + \beta\int_N u.
-\end{equation}
+Not all currents are definable by integration over a submanifold.
+For example, given a point $x$ and a vector $\xi$ in the tangent space to $\Omega$ at $x$, the mapping $f \mapsto df(x)\cdot\xi$ is a well-defined 0-current, but it is not definable by integration.
 A current $J$ is called \emph{integral} if
 \begin{equation}
     \langle J, u\rangle = \alpha\int_Mu
 \end{equation}
 for some integer $\alpha$ and some submanifold $M$.
+Note that the current $-M$ represents integration over $M$ if we give it the opposite orientation.
 
-We can then define the \emph{boundary} $\partial J$ of a current $J$ as the formal adjoint of the exterior derivative:
+Given two $k$-dimensional submanifolds $M$ and $N$ and real numbers $\alpha$ and $\beta$, we can define their linear combination $\alpha \cdot M + \beta\cdot N$ by how this current acts on forms.
+A linear combination of currents need not be definable as some oriented submanifolds, even when the summands are; again, all that matters is how it acts on forms.
+
+Now we can define the \emph{boundary} $\partial J$ of a current $J$ as the formal adjoint of the exterior derivative:
 \begin{equation}
     \langle\partial J, u\rangle \equiv \langle J, du\rangle.
 \end{equation}
-When $J$ is an integral current, this definition agrees with the generalized Stokes theorem.
-It also implies that $\partial(\partial J) = 0$, since $d(du) = 0$ for any differential form $u$.
-
-
-% TODO: Add labels to the figure and the boundary matrices, see
-% https://tex.stackexchange.com/a/59732
-\begin{figure}[h]
-    \begin{minipage}{0.48\linewidth}
-        \begin{center}
-            \begin{tikzpicture}[scale=0.75]
-                \coordinate (p1) at (1, 0){};
-                \coordinate (p2) at (3, 0){};
-                \coordinate (p3) at (2, 2){};
-                \coordinate (p4) at (0, 2){};
-
-                \draw[fill=blue!35] (p1) -- (p2) -- (p3) -- cycle;
-                \draw[fill=red!35] (p1) -- (p3) -- (p4) -- cycle;
-                \begin{scope}[
-                    very thick,
-                    decoration={markings, mark=at position 0.5 with {\arrow{>}}}
-                ]
-                    \draw[postaction={decorate}] (p1) -- (p2);
-                    \draw[postaction={decorate}] (p2) -- (p3);
-                    \draw[postaction={decorate}] (p3) -- (p4);
-                    \draw[postaction={decorate}] (p4) -- (p1);
-                    \draw[postaction={decorate}] (p1) -- (p3);
-                \end{scope}
-                \foreach \p in {p1, p2, p3, p4} {
-                    \filldraw (\p) circle (3pt);
-                }
-            \end{tikzpicture}
-        \end{center}
-    \end{minipage}
-    \hfill
-    \begin{minipage}{0.48\linewidth}
-        {\small
-            \begin{equation*}
-                \partial_1 = \left[\begin{smallmatrix}
-                    - &   & + & - &   \\
-                    + & - &   &   & + \\
-                      & + & - &   &   \\
-                      &   &   & + & -
-                \end{smallmatrix}\right]
-            \end{equation*}
-            \begin{equation*}
-                \partial_2 = \left[\begin{smallmatrix}
-                    + & - \\
-                    + &   \\
-                    + &   \\
-                      & + \\
-                      & +
-                \end{smallmatrix}\right]
-            \end{equation*}
-        }
-    \end{minipage}
-    \caption{Pair of adjacent triangles (left) and their boundary matrices (right).}
-    \label{fig:two-triangle-chain-complex}
-\end{figure}
-
+When $J$ is integration over an oriented submanifold, this definition agrees with the generalized Stokes theorem.
+The boundary operator is a linear map from $\mathscr{C}^k$ to $\mathscr{C}^{k - 1}$.
+Linearity implies that, if we have a finite collection of currents that are closed under taking boundaries, we can represent the action of $\partial$ by matrices.
+Perhaps most importantly, we can state that
+\begin{equation}
+    \partial(\partial J) = 0
+\end{equation}
+since $d(du) = 0$ for any differential form $u$.
+This implies that the spaces $\{\mathscr{C}^k\}$ together with the mappings $\partial_k : \mathscr{C}^k \to \mathscr{C}^{k - 1}$ are a \emph{chain complex}.
 
 
 % -----------------------
