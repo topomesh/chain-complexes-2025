@@ -122,23 +122,24 @@ We can think of an oriented submanifold $M$ as defining a $k$-current by integra
 Some texts opt to use a different notation for the current induced by a submanifold to disambiguate between the two but this level of detail won't be necessary.)
 Not all currents are definable by integration over a submanifold.
 For example, given a point $x$ and a vector $\xi$ in the tangent space to $\Omega$ at $x$, the mapping $f \mapsto df(x)\cdot\xi$ is a well-defined 0-current, but it is not definable by integration.
-A current $J$ is called \emph{integral} if
+A current $J$ is called \emph{rectifiable} if
 \begin{equation}
     \langle J, u\rangle = \alpha\int_Mu
 \end{equation}
-for some integer $\alpha$ and some submanifold $M$.
+for some integer $\alpha$ and some oriented submanifold $M$ with finite Hausdorff measure.
 Note that the current $-M$ represents integration over $M$ if we give it the opposite orientation.
 
-Given two $k$-dimensional submanifolds $M$ and $N$ and real numbers $\alpha$ and $\beta$, we can define their linear combination $\alpha \cdot M + \beta\cdot N$ by how this current acts on forms.
-A linear combination of currents need not be definable as some oriented submanifolds, even when the summands are; again, all that matters is how it acts on forms.
+Given two submanifolds $M$ and $N$ of the same dimension and real numbers $\alpha$ and $\beta$, we can define their linear combination $\alpha \cdot M + \beta\cdot N$ by how this current acts on forms.
+A linear combination of currents need not be definable as integration over some oriented submanifold, even when the summands are; again, all that matters is how the sum acts on forms.
 
-Now we can define the \emph{boundary} $\partial J$ of a current $J$ as the formal adjoint of the exterior derivative:
+Now we can define the \emph{boundary} $\partial J$ of a $k$-current $J$ as the formal adjoint of the exterior derivative:
 \begin{equation}
     \langle\partial J, u\rangle \equiv \langle J, du\rangle.
 \end{equation}
 When $J$ is integration over an oriented submanifold, this definition agrees with the generalized Stokes theorem.
+We say that $J$ is an \emph{integral} current if both $J$ and $\partial J$ are rectifiable.
+
 The boundary operator is a linear map from $\mathscr{C}^k$ to $\mathscr{C}^{k - 1}$.
-Linearity implies that, if we have a finite collection of currents that are closed under taking boundaries, we can represent the action of $\partial$ by matrices.
 Perhaps most importantly, we can state that
 \begin{equation}
     \partial(\partial J) = 0
@@ -146,12 +147,25 @@ Perhaps most importantly, we can state that
 since $d(du) = 0$ for any differential form $u$.
 This implies that the spaces $\{\mathscr{C}^k\}$ together with the mappings $\partial_k : \mathscr{C}^k \to \mathscr{C}^{k - 1}$ are a \emph{chain complex}.
 
+\subsection{Meshes}
+
+We can now define a mesh in terms of currents on some background manifold $\Omega$ of dimension $n$.
+An unstructured mesh is a collection $\{C^0, \ldots, C^n\}$ of finite-dimensional submodules of the integral $k$-currents that are closed under taking boundaries.
+In other words, for any current $M$ in $C^k$,
+\begin{equation}
+    \partial_k M = \sum_ic_iN_i
+\end{equation}
+where $N_i$ are all in $C^{k - 1}$ and the coefficients $c_i$ are all integers.
+With a slight abuse of notation, we will use $\partial_k$ to denote the restriction of the boundary operator as a linear map $\partial_k : C^k \to C^{k - 1}$.
+This definition has one main advantage over the conventional definition of an abstract simplicial complex.
+The $\mathbb{Z}$-module structure of the spaces of integral currents naturally accounts for orientations in a way that needs to be bolted on after the fact for simplicial complexes.
+
+Once we have chosen bases for the vector spaces $C^k$ and $C^{k - 1}$, we can represent the boundary operator $\partial_k$ as a matrix with integer entries.
+These sparse integer matrices are the data structure that we will use to describe meshes and which we will perform transformations on.
+
 
 % -----------------------
 \section{Transformations}
-
-The upshot of all this theory is that we can represent an unstructured mesh as a finite collection of matrices with integer entries.
-These matrices are the representation of how one of the boundary operators acts in a certain choice of basis for the current spaces.
 
 Here we will describe three different transformations that are easily implementable on the linear-algebraic representation of a mesh.
 A \textbf{merge} operation combines several adjacent cells into one cell.
