@@ -95,13 +95,14 @@ We will write the space of all $k$-forms by $\mathscr{F}_k(\Omega)$ or just $\ma
 Given a $k$-form $u$ and an $\ell$-form $v$, we can form their \emph{wedge} or \emph{exterior} product $u \wedge v$, which is a $(k + \ell)$-form.
 The wedge product is obtained by anti-symmetrizing the outer product of the two forms.
 
-The \emph{exterior derivative} on forms $d$ is a differential operator which takes in a $k$-form and gives a $(k + 1)$-form.
+The \emph{exterior derivative} on forms $d_k$ is a differential operator which takes in a $k$-form and gives a $(k + 1)$-form.
+Where the rank $k$ of the form can be determined from context, we'll write $d$ and leave off the subscript.
 The exterior derivative can be defined axiomatically by requiring that (1) if $f$ is a scalar field or 0-form, then its exterior derivative is equal to its differential; (2) if $f$ is a scalar field, then $d(df) = 0$; and (3) $d(u \wedge v) = du\wedge v + (-1)^k u \wedge dv$.
 From these properties, we can deduce that $d(du) = 0$ for any form $u$.
 
 Most important for us is the generalized \emph{Stokes theorem}.
 Given a $k$-form $u$ and an oriented $k$-dimensional submanifold $M$, we can define the integral of $u$ on $M$.
-The generalized Stokes theorem states that
+The generalized Stokes theorem states that, for a $k - 1$-form $u$,
 \begin{equation}
     \int_Mdu = \int_{\partial M}u.
 \end{equation}
@@ -132,20 +133,45 @@ Note that the current $-M$ represents integration over $M$ if we give it the opp
 Given two submanifolds $M$ and $N$ of the same dimension and real numbers $\alpha$ and $\beta$, we can define their linear combination $\alpha \cdot M + \beta\cdot N$ by how this current acts on forms.
 A linear combination of currents need not be definable as integration over some oriented submanifold, even when the summands are; again, all that matters is how the sum acts on forms.
 
-Now we can define the \emph{boundary} $\partial J$ of a $k$-current $J$ as the formal adjoint of the exterior derivative:
+Now we can define the \emph{boundary} $\partial_k J$ of a $k$-current $J$ as the formal adjoint of the exterior derivative $d_{k - 1}$:
 \begin{equation}
-    \langle\partial J, u\rangle \equiv \langle J, du\rangle.
+    \langle\partial_k J, u\rangle \equiv \langle J, d_{k - 1}u\rangle.
 \end{equation}
+Once again, when the dimension $k$ of the current is clear from context, we will write just $\partial$ and drop the subscript.
 When $J$ is integration over an oriented submanifold, this definition agrees with the generalized Stokes theorem.
 We say that $J$ is an \emph{integral} current if both $J$ and $\partial J$ are rectifiable.
 
 The boundary operator is a linear map from $\mathscr{C}^k$ to $\mathscr{C}^{k - 1}$.
-Perhaps most importantly, we can state that
+Since $d(du) = 0$ for any differential form $u$, we can then show that $\partial(\partial J) = 0$.
+This equation is more commonly expressed purely in terms of the boundary operators as
 \begin{equation}
-    \partial(\partial J) = 0
+    \partial_k\cdot\partial_{k + 1} = 0.
+    \label{eq:ddzero}
 \end{equation}
-since $d(du) = 0$ for any differential form $u$.
-This implies that the spaces $\{\mathscr{C}^k\}$ together with the mappings $\partial_k : \mathscr{C}^k \to \mathscr{C}^{k - 1}$ are a \emph{chain complex}.
+and this is the most important property of boundary operators.
+Moreover, equation \eqref{eq:ddzero} implies that the spaces $\{\mathscr{C}^k\}$ together with the mappings $\partial_k : \mathscr{C}^k \to \mathscr{C}^{k - 1}$ are a \emph{chain complex}.
+
+There is one final definition that will clarify a later construction at a critical juncture.
+The definitions above assume that the chain complex terminates at $\mathscr{C}^0$, i.e. continuous linear functionals on the space of scalar fields.
+We will instead include a \emph{bottom} space $\mathscr{C}^{-1}$ which is isomorphic to $\mathbb{R}$.
+We then wish to define a 0-boundary operator $\partial_0 : \mathscr{C}^0 \to \mathbb{R}$ such that $\partial_0\partial_1 = 0$.
+Remembering that the 0-currents are continuous linear functionals on the space of scalar fields, we will define the 0-boundary operator as follows:
+\begin{equation}
+    \partial_0 J = \langle J, 1\rangle,
+    \label{eq:0-boundary-operator}
+\end{equation}
+i.e. take the action of $J$ on the constant function $u(x) = 1$.
+For example, if $J$ is a rectifiable 0-current, then $J$ must have the form
+\begin{equation}
+    J = \sum_ia_i\delta_{x_i}
+\end{equation}
+for some finite collection of points $\{x_i\}$.
+Then
+\begin{equation}
+    \partial_0J = \sum_i a_i.
+\end{equation}
+Requiring that $\partial_0\partial_1 = 0$ then implies, for example, that rectifiable 1-currents have to be a sum of circles or curves that goes from one point to another point.
+\textcolor{red}{I want to talk about incidence numbers between currents here but we haven't introduced that concept yet.}
 
 \subsection{Meshes}
 
@@ -162,6 +188,16 @@ The $\mathbb{Z}$-module structure of the spaces of integral currents naturally a
 
 Once we have chosen bases for the vector spaces $C^k$ and $C^{k - 1}$, we can represent the boundary operator $\partial_k$ as a matrix with integer entries.
 These sparse integer matrices are the data structure that we will use to describe meshes and which we will perform transformations on.
+The condition \eqref{eq:ddzero} is an invariant of this data structure, and preservation of this invariant is a strong constraint on any transformations that we might define.
+
+Having restricted ourselves to finite-dimensional subspaces of the full chain spaces, the matrix that represents the 0-boundary operator is the row vector of all 1s:
+\begin{equation}
+    \partial_0 = \mathbbm{1}^*.
+    \label{eq:0-boundary-matrix}
+\end{equation}
+At a linear algebraic level, the condition that $\partial_0\partial_1 = 0$ now forces every column of $\partial_1$ to sum of up to zero.
+The desired behavior is that every 1-current or edge of the mesh has a single -1 entry and a single +1 entry in the corresponding column of $\partial_1$, although strictly speaking no condition enforces this behavior exactly.
+This equation will reappear when we define the split transformation.
 
 
 % -----------------------
@@ -204,6 +240,11 @@ For merging cells of top dimension $n$, there are no higher-dimensional cells to
 
 A \emph{split} divides up the union of several polytopes along a vertex.
 The key correctness criteria for this operation are that (1) every newly-created polytope contains the splitting vertex and (2) the boundary of the sum of all polytopes does not change.
+This second condition can be expressed mathematically as
+\begin{equation}
+    \partial_k'\mathbbm{1} = \left[\begin{matrix}\partial_k\mathbbm{1} \\ 0\end{matrix}\right].
+    \label{eq:split-preserves-boundaries}
+\end{equation}
 We'll describe the 2D case first and then proceed to arbitrary dimensions.
 
 Suppose that a collection of adjacent polygons has the boundary operators $\partial_1$ and $\partial_2$.
@@ -225,7 +266,7 @@ Since $\text{diag}(z)\cdot\mathbbm{1} = z$ for any vector $z$, we also find that
 \begin{equation}
     \partial_2'\mathbbm{1} = \left[\begin{matrix}\partial_2\mathbbm{1} \\ 0\end{matrix}\right]
 \end{equation}
-or in other words the new polygon has the same boundary as the old.
+which is exactly equation \eqref{eq:split-preserves-boundaries}, or that the new polygons have the same boundary as the old.
 Figure \ref{fig:split-transformation} illustrates the split transformation on a single quadrilateral and shows the boundary matrices before and after.
 
 \begin{figure}[h]
@@ -315,7 +356,8 @@ Figure \ref{fig:split-transformation} illustrates the split transformation on a 
     \label{fig:split-transformation}
 \end{figure}
 
-We can get an idea for how to extend this to $n$ dimensions by remembering that $\mathbbm{1}^* = \partial_0$ in equation \eqref{eq:split-1-2d}.
+We can get an idea for how to extend this to $n$ dimensions by remembering the 0-boundary operator (equation \eqref{eq:0-boundary-matrix}).
+In equation \eqref{eq:split-1-2d}, we can replace $\mathbbm{1}^* = \partial_0$.
 This suggests the transformation
 \begin{align}
     \partial_k' & = \left[\begin{matrix}\partial_k & I \\ 0 & -\partial_{k - 1}\end{matrix}\right] \label{eq:split-k} \\
@@ -413,6 +455,8 @@ For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by 
     \label{fig:2-3-flip}
 \end{figure}
 
+\textcolor{red}{This text is copied over from the short paper but it needs revisiting.
+The current paper is supposed to do or at least enable multi-face retriangulation so we need to be less speculative and prove the concept.}
 A few papers have proposed using multi-cell transformations for 3D mesh improvement \cite{klingner2008aggressive}.
 Multi-cell transformations are more complex than 2-3 or 3-2 flips, but \cite{misztal2009tetrahedral} showed that they can be implemented as a sequence of flips.
 Using the boundary operators might make it possible to implement complex transformations with less effort.
@@ -439,6 +483,10 @@ The new boundary matrices will have the form
     & \partial_k' = \left[\begin{matrix}[V_1, E_1] & 0 & 0 \\ 0 & [V_2, E_2] & 0 \\ [V_3, E_1] & [V_3, E_2] & [V_3, E_3] \end{matrix}\right], \\
     & \quad \partial_{k + 1}' = \left[\begin{matrix}[E_1, T_1] & 0 \\ 0 & [E_2, T_2] \\ [E_3, T_1] & [E_3, T_2]\end{matrix}\right]
 \end{align}
+
+\textcolor{red}{Finish this.
+I haven't introduced what the $[\cdot,\cdot]$ notation means because in the short version this was the topological degree of the attaching map.
+I don't know how this is defined for currents.}
 
 
 % ---------------------
@@ -476,6 +524,9 @@ def split(D: List[np.ndarray]) -> List[np.ndarray]:
 \end{figure}
 We used the split transformation to implement a convex hull algorithm that works in arbitrary dimensions.
 To test the convex hull code, we used (1) random point sets up to dimension 5 and (2) several synthetic input sets with various degeneracies such as coplanarity.
+\textcolor{red}{This next sentence was copied over from the short paper, and it was true at the time.
+Now we have a package that uses interval arithmetic and falls back to bignum rational, which is much faster.
+We should finish testing that, make sure it works for the insphere predicate, and say something about it.}
 For geometric predicates, we used the Python standard library's built-in routines to convert a floating point value exactly to a ratio of big integers.
 
 
@@ -491,7 +542,7 @@ Once the transformed patch is computed, it can be translated back to a set of si
 Boundary operators are useful for describing non-simplicial intermediate states of a transformation; they are not space-optimal for describing an entire simplicial complex.
 
 When the objects of study can be represented as linear operators, we can apply linear algebraic reasoning to define transformations and verify that they preserve all of the important invariants.
-The condition in equation \eqref{eq:ddzero} that the product of two boundary operators is zero is a very powerful invariant for ensuring the validity of the underlying topology.
+The condition in equation \eqref{eq:ddzero} that the product of two boundary operators is zero is a powerful invariant for ensuring the validity of the underlying topology.
 
 
 \bibliography{chain-complexes.bib}
