@@ -492,7 +492,12 @@ I don't know how this is defined for currents.}
 % ---------------------
 \section{Demonstration}
 
-As a proof of concept, we developed a software package called \emph{zmsh} which implements the split transformation defined above \cite{shapero2023zmsh}.
+As a proof of concept, we developed a software package called \emph{topomesh} which implements the transformations defined above.
+We then implemented several common algorithms in computational geometry using these transformations.
+
+\subsection{Splitting and convex hulls}
+
+The split transformation is the key computational kernel for computing convex hulls in any dimension.
 The source code for the split transformation is shown in figure \ref{fig:split-source-code}.
 \begin{figure}
     \begin{minted}[fontsize=\footnotesize,linenos]{python}
@@ -522,12 +527,23 @@ def split(D: List[np.ndarray]) -> List[np.ndarray]:
     The real version has some additional logic to remove empty cells.}
     \label{fig:split-source-code}
 \end{figure}
+
 We used the split transformation to implement a convex hull algorithm that works in arbitrary dimensions.
 To test the convex hull code, we used (1) random point sets up to dimension 5 and (2) several synthetic input sets with various degeneracies such as coplanarity.
-\textcolor{red}{This next sentence was copied over from the short paper, and it was true at the time.
-Now we have a package that uses interval arithmetic and falls back to bignum rational, which is much faster.
-We should finish testing that, make sure it works for the insphere predicate, and say something about it.}
-For geometric predicates, we used the Python standard library's built-in routines to convert a floating point value exactly to a ratio of big integers.
+For geometric predicates, we used interval arithmetic and fall back to exact rational arithmetic if the result interval contains zero.
+\textcolor{red}{Elaborate...}
+
+Our implementation of the convex hull algorithm takes in a function as argument which supplies the procedure for computing the signed volume predicate.
+Computing Delaunay triangulations is equivalent to computing the lower half of a convex hull of the input points lifted to a paraboloid.
+We also implemented a Delaunay triangulation method which reuses our convex hull algorithm by supplying an insphere function instead of the usual signed volume function.
+
+
+\subsection{Constrained Delaunay triangulation}
+
+The split transformation alone is enough to compute convex hulls and unconstrained Delaunay triangulations.
+Computing a constrained Delaunay triangulation (CDT), on the other hand, requires both merges and bisections.
+We implemented a CDT algorithm based on \cite{anglada1997improved}.
+\textcolor{red}{Elaborate...}
 
 
 % ------------------
