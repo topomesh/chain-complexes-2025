@@ -43,161 +43,105 @@ By representing the objects of study using the language of linear algebra, we ca
 % --------------------
 \section{Introduction}
 
-In this paper, we'll explore some of the computational kernels for unstructured meshing.
-Nearly all problems in meshing require the ability to perform local transformations to the mesh topology.
-For example, to compute the Delaunay triangulation, the Lawson algorithm uses a sequence of bistellar flips, while the Bowyer-Watson algorithm is based on splitting star-shaped polytopes along a vertex \cite{cheng2013delaunay}.
+Nearly all constructions in unstructured meshing require the ability to perform local transformations to the mesh topology.
+For example, to compute the Delaunay triangulation, the Lawson algorithm uses a sequence of edge flips, while the Bowyer-Watson algorithm is based on splitting star-shaped polytopes along a vertex \cite{cheng2013delaunay}.
 Algorithms for mesh coarsening, on the other hand, apply a sequence of edge or face collapses \cite{cignoni1998comparison}.
 Implementing these low-level transformation kernels on common mesh data structures can be difficult and error-prone.
 Are there other mesh data structures that make common algorithms easier to implement?
 
 The idea of \emph{linear-algebraic representation} is to describe the mesh topology using a sequence of linear operators between certain vector spaces or modules.
-The linear algebraic representation of meshes comes from algebraic topology: the \emph{boundary operators} on a certain \emph{chain complex}.
+The idea comes from algebraic topology: the linear operators are the \emph{boundary operators} on a certain \emph{chain complex}.
 \textbf{If we can describe the mesh topology using linear algebra, then we can transform it using linear algebra as well.}
 This viewpoint has been adopted in several publications on meshing and solid modeling \cite{dicarlo2007solid}, \cite{dicarlo2014linear}, \cite{mueller2017ternary}, \cite{paoluzzi2020topological}.
 Other domains of science and engineering have seized on the idea of using linear algebra as the common language for building applications as well.
 For example, the GraphBLAS project aims to implement common algorithms in graph theory using linear algebra \cite{mattson2013standards}.
 
-In \textcolor{red}{Shapero (2023)}, I showed how to implement two transformations -- splitting a cell on a vertex and merging adjacent cells -- on the linear-algebraic representation of a polygonal mesh.
-I then demonstrated how to compute convex hulls and Delaunay triangulations in higher dimensions using these kernels.
+This paper will show three transformations on the linear-algebraic represention of a polygonal mesh: (1) splitting a cell on a vertex, (2) merging adjacent cells, and (3) subdividing a cell along a collection of facets.
 The main advantage of this linear-algebraic approach is that the transformation kernels are easy to write down and to code.
-Our contribution here is an extension of this work to an additional transformation: splitting a cell on a collection of facets.
-This transformation can also be expressed entirely with linear algebra.
-We provide a proof-of-concept application to computed constrained Delaunay meshes and 2D and 3D.
+We show how other higher-level transformations can be implemented in terms of these primitive operations.
+Finally, as a proof-of-concept, we implemented algorithms for computing convex hulls in arbitrary dimensions and constrained Delaunay triangulations in 2D.
 
 
 % --------------
 \section{Theory}
 
-In this section, we'll describe some of the mathematical theory that underlies the constructions that follow.
-Understanding this theory at a profound level isn't strictly necessary in order to understand how we instrumentalize it to perform computations.
-But our objects of study are more abstract than, say, a simplex or other point set.
-A point set can be described solely through what its members are; the objects we are interested in carry with them an additional notion of orientation.
+The mathematical theory that underlies the rest of the paper is basic algebraic topology.
+We describe the connectivity of a mesh using the boundary operators on a finite, regular CW complex \cite{hatcher2002algebraic}.
+The intuitive picture of a CW complex is a collection of cells or polygons that are attached together by certain maps.
+The formal definition of a CW complex is inductive in the dimension.
+A 0-dimensional complex $\Omega^0$ is a finite collection of points.
+A finite $n$-dimensional complex consists of (1) an $n - 1$-dimensional complex $\Omega^{n - 1}$, and (2) a finite collection $\{\phi_\alpha^n\}$ of homeomorphisms called \emph{attaching maps} from the unit sphere $S^{n - 1}$ into $\Omega^{n - 1}$.
+The complex $\Omega^n$ is then defined to be the disjoint union of copies of the unit ball, with the boundary of copy $\alpha$ identified with its image under the attaching map $\phi_\alpha^n$ under the quotient topology.
+We will write $\Omega$ without a superscript for the whole complex, and $\Omega^k$ for the collection of all cells of dimension $k$.
 
-As we alluded to before, the underlying theory is basic algebraic topology.
-The usual introduction to algebraic topology starts with CW complexes \cite{hatcher2002algebraic}.
-But understanding how to get from a CW complex to what we really care about -- a sequence of boundary operators -- requires some advance knowledge of homology or degree theory first.
-Moreover, these boundary operators are linear mappings between certain modules, the spaces of \emph{chains}.
-The chain spaces are defined as formal linear combinations of cells of the mesh.
-On introducing the idea of chains, many readers will scratch their heads and wonder what on earth we mean by multiplying a triangle by four -- is it creating four copies of a triangle?
-Not quite...
-In our experience, readers find it unsatisfying to hand-wave the issue away by telling them to think of these algebraic operations as purely formal manipulations with no intrinsic meaning.
-
-Instead, we will take as our theoretical underpinning the theory of \emph{currents} on a manifold.
-The theory of currents is a kind of dual to the theory of differential forms.
-The main advantage is that it gives a clear concept for what it means to multiply a submanifold by an integer or even a real number.
-
-\subsection{Differential forms}
-
-Let $\Omega$ be a compact, orientable manifold, and $u$ a completely antisymmetric tensor field of rank $k$ on $\Omega$.
-Such a tensor field is called a \emph{differential $k$-form}.
-We will write the space of all $k$-forms by $\mathscr{F}_k(\Omega)$ or just $\mathscr{F}_k$ when the underlying manifold is clear from context.
-
-Given a $k$-form $u$ and an $\ell$-form $v$, we can form their \emph{wedge} or \emph{exterior} product $u \wedge v$, which is a $(k + \ell)$-form.
-The wedge product is obtained by anti-symmetrizing the outer product of the two forms.
-
-The \emph{exterior derivative} on forms $d_k$ is a differential operator which takes in a $k$-form and gives a $(k + 1)$-form.
-Where the rank $k$ of the form can be determined from context, we'll write $d$ and leave off the subscript.
-The exterior derivative can be defined axiomatically by requiring that (1) if $f$ is a scalar field or 0-form, then its exterior derivative is equal to its differential; (2) if $f$ is a scalar field, then $d(df) = 0$; and (3) $d(u \wedge v) = du\wedge v + (-1)^k u \wedge dv$.
-From these properties, we can deduce that $d(du) = 0$ for any form $u$.
-
-Most important for us is the generalized \emph{Stokes theorem}.
-Given a $k$-form $u$ and an oriented $k$-dimensional submanifold $M$, we can define the integral of $u$ on $M$.
-The generalized Stokes theorem states that, for a $k - 1$-form $u$,
+The main character of our story is not the CW complex itself but rather the boundary operators between the chain modules.
+To define what a boundary operator is we first need to describe what spaces it acts on.
+A \emph{chain} $C$ is a formal integer linear combination of $k$-dimensional cells:
 \begin{equation}
-    \int_Mdu = \int_{\partial M}u.
+    C = c_1\sigma_1 + \ldots + c_m\sigma_m
 \end{equation}
-This includes Green's theorem, the divergence theorem, and the classical Stokes theorem as special cases.
+where the $c_i$ are integer coefficients and $\sigma_i$ are $k$-cells.
+We write the space of all $k$-chains on a complex $\Omega$ as $\mathscr{C}^k(\Omega)$ or just $\mathscr{C}^k$ where the underlying CW complex is clear from context.
 
-\subsection{Currents}
-
-A $k$-\emph{current} is a continuous linear functional from the space of $k$-forms $\mathscr{F}_k(\Omega)$ to the reals.
-We denote the action of a current $J$ on a form $u$ by $\langle J, u\rangle$ and the space of all $k$-currents by $\mathscr{C}^k(\Omega)$.
-The space of $k$-currents naturally has the structure of a vector space.
-Currents are exactly analogous to spaces of distributions as defined in PDE theory, but with the extra tensorial character of differential forms.
-
-We can think of an oriented submanifold $M$ as defining a $k$-current by integration:
+To define the boundary operators, we need some idea of orientation or incidence between cells.
+For simplicial complexes, we define this orientation by picking orderings for how the vertices appear in each cell.
+For cubical complexes, orientation is instead defined by deciding which faces are in the ``front'' or ``back'' along each axis.
+There is no simple combinatorial definition of orientation or incidence for general CW complexes.
+Instead, the definition requires some pre-existing notion of topological degree theory.
+Let $\sigma$ be a $k$-cell of a complex and $\tau$ a $k - 1$-cell.
+The quantity we wish to define is the \emph{incidence number} $[\sigma, \tau]$ between the two cells.
+An intuitive definition of the incidence number is
 \begin{equation}
-    \langle M, u\rangle \equiv \int_M u.
+    [\sigma, \tau] = \begin{cases}0 & \text{$\tau$ is not in $\sigma$} \\ +1 & \text{$\tau$ is positively-oriented in $\sigma$} \\ -1 & \text{$\tau$ is negatively oriented in $\sigma$}\end{cases}
 \end{equation}
-(Here we'll abuse notation a little bit by writing both the oriented submanifold and the linear functional as ``$M$''.
-Some texts opt to use a different notation for the current induced by a submanifold to disambiguate between the two but this level of detail won't be necessary.)
-Not all currents are definable by integration over a submanifold.
-For example, given a point $x$ and a vector $\xi$ in the tangent space to $\Omega$ at $x$, the mapping $f \mapsto df(x)\cdot\xi$ is a well-defined 0-current, but it is not definable by integration.
-A current $J$ is called \emph{rectifiable} if
+but this informal definition relies on some primitive idea of ``positive'' or ``negative'' orientation.
+The formal definition of the incidence number relies on defining homology groups of spheres, the fact that maps between spaces can be pulled back to maps between homology groups, and the fact that the $n$-th homology group of the sphere $S^n$ is isomorphic to $\mathbb{Z}$.
+Let $\phi$ be the map that attaches $\sigma$ into $\Omega$, and let $\phi^{-1}(\tau)$ be the pre-image of $\tau$ under this map.
+Then the incidence number is defined formally as the topological degree of the attaching map $\phi$.
+For our purposes, however, it is enough to think about incidence numbers using the informal definition.
+
+We can now define the boundary operators.
+The $k$-th boundary operator $\partial_k$ is a mapping from the $k$-chains to $k - 1$-chains:
 \begin{equation}
-    \langle J, u\rangle = \alpha\int_Mu
+    \partial_k : \mathscr{C}^k \to \mathscr{C}^{k - 1}.
 \end{equation}
-for some integer $\alpha$ and some oriented submanifold $M$ with finite Hausdorff measure.
-Note that the current $-M$ represents integration over $M$ if we give it the opposite orientation.
-
-Given two submanifolds $M$ and $N$ of the same dimension and real numbers $\alpha$ and $\beta$, we can define their linear combination $\alpha \cdot M + \beta\cdot N$ by how this current acts on forms.
-A linear combination of currents need not be definable as integration over some oriented submanifold, even when the summands are; again, all that matters is how the sum acts on forms.
-
-Now we can define the \emph{boundary} $\partial_k J$ of a $k$-current $J$ as the formal adjoint of the exterior derivative $d_{k - 1}$:
+Given a $k$-cell $\sigma$, we define the boundary of $\sigma$ as
 \begin{equation}
-    \langle\partial_k J, u\rangle \equiv \langle J, d_{k - 1}u\rangle.
+    \partial_k\sigma = \sum_{\tau \in \Omega^{k - 1}}[\sigma, \tau]\tau
 \end{equation}
-Once again, when the dimension $k$ of the current is clear from context, we will write just $\partial$ and drop the subscript.
-When $J$ is integration over an oriented submanifold, this definition agrees with the generalized Stokes theorem.
-We say that $J$ is an \emph{integral} current if both $J$ and $\partial J$ are rectifiable.
-
-The boundary operator is a linear map from $\mathscr{C}^k$ to $\mathscr{C}^{k - 1}$.
-Since $d(du) = 0$ for any differential form $u$, we can then show that $\partial(\partial J) = 0$.
-This equation is more commonly expressed purely in terms of the boundary operators as
+where the sum is over all $k - 1$-dimensional cells $\tau$.
+We then extend the definition of $\partial_k$ to all of $\mathscr C^k$ by $\mathbb{Z}$-linearity.
+The most important fact about boundary operators is that the boundary of a boundary is always equal to zero:
 \begin{equation}
     \partial_k\cdot\partial_{k + 1} = 0.
     \label{eq:ddzero}
 \end{equation}
-and this is the most important property of boundary operators.
-Moreover, equation \eqref{eq:ddzero} implies that the spaces $\{\mathscr{C}^k\}$ together with the mappings $\partial_k : \mathscr{C}^k \to \mathscr{C}^{k - 1}$ are a \emph{chain complex}.
+This equation and its consequences is the starting point of homology theory, but we will not need to use this theory in the following.
 
 There is one final definition that will clarify a later construction at a critical juncture.
-The definitions above assume that the chain complex terminates at $\mathscr{C}^0$, i.e. continuous linear functionals on the space of scalar fields.
-We will instead include a \emph{bottom} space $\mathscr{C}^{-1}$ which is isomorphic to $\mathbb{R}$.
-We then wish to define a 0-boundary operator $\partial_0 : \mathscr{C}^0 \to \mathbb{R}$ such that $\partial_0\partial_1 = 0$.
-Remembering that the 0-currents are continuous linear functionals on the space of scalar fields, we will define the 0-boundary operator as follows:
+The definitions above assume that the chain complex terminates at $\mathscr{C}^0$, i.e. integer linear combinations of the vertices or 0-dimensional cells.
+We will instead include a single \emph{bottom} cell $\bot$ of dimension $-1$, together with a corresponding chain space $\mathscr{C}^{-1}$ which is isomorphic to $\mathbb{Z}$.
+We then wish to define a 0-boundary operator $\partial_0 : \mathscr{C}^0 \to \mathscr{C}^{-1}$ such that $\partial_0\partial_1 = 0$.
+We then define the boundary of any vertex $v$ to be $+\bot$; extending by linearity, the 0-boundary operator acts on the chain $\sum_kc_kv_k$ according to
 \begin{equation}
-    \partial_0 J = \langle J, 1\rangle,
-    \label{eq:0-boundary-operator}
+    \partial_0\left(\sum_kc_kv_k\right) = \left(\sum_kc_k\right)\bot.
 \end{equation}
-i.e. take the action of $J$ on the constant function $u(x) = 1$.
-For example, if $J$ is a rectifiable 0-current, then $J$ must have the form
-\begin{equation}
-    J = \sum_ia_i\delta_{x_i}
-\end{equation}
-for some finite collection of points $\{x_i\}$.
-Then
-\begin{equation}
-    \partial_0J = \sum_i a_i.
-\end{equation}
-Requiring that $\partial_0\partial_1 = 0$ then implies, for example, that rectifiable 1-currents have to be a sum of circles or curves that goes from one point to another point.
-\textcolor{red}{I want to talk about incidence numbers between currents here but we haven't introduced that concept yet.}
-
-\subsection{Meshes}
-
-We can now define a mesh in terms of currents on some background manifold $\Omega$ of dimension $n$.
-An unstructured mesh is a collection $\{C^0, \ldots, C^n\}$ of finite-dimensional submodules of the integral $k$-currents that are closed under taking boundaries.
-In other words, for any current $M$ in $C^k$,
-\begin{equation}
-    \partial_k M = \sum_ic_iN_i
-\end{equation}
-where $N_i$ are all in $C^{k - 1}$ and the coefficients $c_i$ are all integers.
-With a slight abuse of notation, we will use $\partial_k$ to denote the restriction of the boundary operator as a linear map $\partial_k : C^k \to C^{k - 1}$.
-This definition has one main advantage over the conventional definition of an abstract simplicial complex.
-The $\mathbb{Z}$-module structure of the spaces of integral currents naturally accounts for orientations in a way that needs to be bolted on after the fact for simplicial complexes.
+In the algebraic topology literature, the inclusion of this bottom cell and chain space is used to form the \emph{reduced} homology groups.
 
 Once we have chosen bases for the vector spaces $C^k$ and $C^{k - 1}$, we can represent the boundary operator $\partial_k$ as a matrix with integer entries.
 These sparse integer matrices are the data structure that we will use to describe meshes and which we will perform transformations on.
-The condition \eqref{eq:ddzero} is an invariant of this data structure, and preservation of this invariant is a strong constraint on any transformations that we might define.
+The condition \eqref{eq:ddzero} is an invariant of this data structure.
+Preserving this invariant constrains any transformations that we might define.
 
-Having restricted ourselves to finite-dimensional subspaces of the full chain spaces, the matrix that represents the 0-boundary operator is the row vector of all 1s:
+The matrix that represents the 0-boundary operator is the row vector of all 1s:
 \begin{equation}
     \partial_0 = \mathbbm{1}^*.
     \label{eq:0-boundary-matrix}
 \end{equation}
-At a linear algebraic level, the condition that $\partial_0\partial_1 = 0$ now forces every column of $\partial_1$ to sum of up to zero.
-The desired behavior is that every 1-current or edge of the mesh has a single -1 entry and a single +1 entry in the corresponding column of $\partial_1$, although strictly speaking no condition enforces this behavior exactly.
-This equation will reappear when we define the split transformation.
+At a linear algebraic level, the condition that $\partial_0\partial_1 = 0$ now implies that the boundary of every edge has one positive and one negative vertex: $\partial e = v_i - v_j$ for some $i$, $j$.
+We cannot have that, say, $\partial e = v_i + v_j$.
+This outcome would be undesirable but no other condition on chain complexes explicitly forbids it.
+Equation \eqref{eq:0-boundary-matrix} will reappear when we define the split transformation.
 
 
 % -----------------------
