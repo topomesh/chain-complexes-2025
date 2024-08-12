@@ -150,9 +150,7 @@ Equation \eqref{eq:0-boundary-matrix} will reappear when we define the split tra
 Here we will describe three different transformations that are easily implementable on the linear-algebraic representation of a mesh.
 A \textbf{merge} operation combines several adjacent cells into one cell.
 A \textbf{split} subdivides a cell into several cells along a new vertex.
-A \textbf{bisection} subdivides a cell into two along a new facet.
-The merge and split operations have appeared in \textcolor{red}{Shapero (2023)}, but we repeat them here for completeness.
-The bisection operation is new.
+A \textbf{bisection} subdivides a cell into several cells along a new facet or collection of facets.
 
 Before showing the transformations themselves, it's worth considering some of the transformations of a chain complex that leave it unaltered.
 First, observe that if $A$, $B$ are integer matrices such that the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$, then the matrices
@@ -409,28 +407,46 @@ Multiface retriangulation, as advocated in \cite{misztal2009tetrahedral}, is a t
 
 \subsection{Bisection}
 
-Finally, we consider the problem of how to split a single $k$-cell in two along some $(k - 1)$-cell.
-We first consider the structure of the cell we wish to split.
-The boundary matrices must first have the form
-\begin{equation}
-    \partial_k = \left[\begin{matrix}[V_1, E_1] & 0 \\ 0 & [V_2, E_2] \\ [V_3, E_1] & [V_3, E_2]\end{matrix}\right], \quad \partial_{k + 1} = \left[\begin{matrix}[E_1, T] \\ [E_2, T]\end{matrix}\right].
-\end{equation}
-The condition that $\partial_k\cdot\partial_{k + 1} = 0$ gives us several identities to work with:
-\begin{align}
-    [V_1, E_1][E_1, T] & = 0 \\
-    [V_2, E_2][E_2, T] & = 0 \\
-    [V_3, E_1][E_1, T] + [V_3, E_2][E_2, T] & = 0
-\end{align}
-Now we want to split the cell $T$ into two cells $T_1$ and $T_2$ such that $T = T_1 + T_2$.
-The new boundary matrices will have the form
-\begin{align}
-    & \partial_k' = \left[\begin{matrix}[V_1, E_1] & 0 & 0 \\ 0 & [V_2, E_2] & 0 \\ [V_3, E_1] & [V_3, E_2] & [V_3, E_3] \end{matrix}\right], \\
-    & \quad \partial_{k + 1}' = \left[\begin{matrix}[E_1, T_1] & 0 \\ 0 & [E_2, T_2] \\ [E_3, T_1] & [E_3, T_2]\end{matrix}\right]
-\end{align}
+Finally, we consider the problem of how to split a single $k$-cell $P$ into two or more cells along a collection of $(k - 1)$-cells.
+In order to be able to split the top cell, we need to assume a certain connectivity structure between its faces.
+A $k$-\emph{path} in $\Omega$ is a collection $\{f_0, s_0, f_1, s_1, \ldots, f_{m - 1}, s_{m - 1}, f_m\}$ such that $s_i$ is a common sub-face of both $f_i$ and $f_{i + 1}$ for each $i$.
+Given two collections of faces $F_1$, $F_2$, we say that a third collection of faces $F$ is a \emph{separator} for $F_1$, $F_2$ if any path from a cell $f_1$ in $F_1$ to a cell $f_2$ in $F_2$ must include some cell $f$ in $F$.
+The definition is similar to that of graph theory but with some important differences in the case of cell complexes.
 
-\textcolor{red}{Finish this.
-I haven't introduced what the $[\cdot,\cdot]$ notation means because in the short version this was the topological degree of the attaching map.
-I don't know how this is defined for currents.}
+In order to be able to subdivide $P$ into multiple cells, we need to be able to partition its faces into two or more groups $\{F_1, \ldots, F_m\}$ with a common separator $F_0$.
+Moreover, we assume at first that $[P, F_0] = 0$ and $[P, F_i] \neq 0$ for $i \ge 1$.
+We can find separators and subgroups through a procedure analogous to breadth-first search but with adjacency defined by sharing common subfaces.
+
+The boundary matrices at first will have the form
+\begin{equation}
+    \partial_k = \Big[\begin{matrix}[S, F_0] & [S, F_1] & \cdots & [S, F_m]\end{matrix}\Big],
+\end{equation}
+where $S$ denotes the set of all subfaces or $k - 2$-dimensional cells contained in $P$, and
+\begin{equation}
+    \partial_{k + 1} = \left[\begin{matrix} 0 \\ [F_1, P] \\ \vdots \\ [F_m, P]\end{matrix}\right].
+\end{equation}
+The fundamental equation \eqref{eq:ddzero} then implies that
+\begin{equation}
+    \sum_i[S, F_i]\cdot[F_i, P] = 0.
+\end{equation}
+We then make the ansatz that the transformed boundary matrix will have the form
+\begin{equation}
+    \partial_{k + 1}' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
+\end{equation}
+where the adjacencies $[F_0, P_i]$ need to be solved for.
+Provided that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, the boundary of the new chain will be the same as the old.
+To preserve the fundamental equation $\partial\partial = 0$, we need that
+\begin{equation}
+    [S, F_0][F_0, P_i] = -[S, F_i][F_i, P].
+\end{equation}
+We can then attempt to find a solution of this collection of linear systems of equations.
+The existence of a solution is not guaranteed a priori, but if we can find one then it defines a valid subdivision of the original cell.
+The system is also rectangular, so it may be under- or over-determined depending on the number of faces and subfaces.
+We can obtain a square system by instead opting to solve
+\begin{equation}
+    [S, F_0]^*[S, F_0][F_0, P_i] = -[S, F_0]^*[S, F_i][F_i, P].
+\end{equation}
+We can compute solutions to integer linear systems by first finding the Hermite normal form of the system matrix \cite{kannan1979polynomial}.
 
 
 % ---------------------
