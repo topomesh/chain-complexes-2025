@@ -149,19 +149,151 @@ Equation \eqref{eq:0-boundary-matrix} will reappear when we define the split tra
 
 Here we will describe three different transformations that are easily implementable on the linear-algebraic representation of a mesh.
 A \textbf{merge} operation combines several adjacent cells into one cell.
-A \textbf{split} subdivides a cell into several cells along a new vertex.
-A \textbf{bisection} subdivides a cell into several cells along a new facet or collection of facets.
+A \textbf{vertex split} subdivides a cell into several cells along a new vertex.
+A \textbf{face split} subdivides a cell into several cells along a new facet or collection of facets.
+There are, however, some common principles underlying all transformations.
 
-Before showing the transformations themselves, it's worth considering some of the transformations of a chain complex that leave it unaltered.
-First, observe that if $A$, $B$ are integer matrices such that the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$, then the matrices
+\subsection{General principles}
+
+\subsubsection{Symmetries}
+
+Before showing genuine transformations that alter the connectivity or structure of a polygonization, it's worth considering what modifications of the boundary matrices leave them unaltered.
+If $A$, $B$ are integer matrices such that the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$, then the matrices
 \begin{equation}
     \partial_k' = \partial_k\cdot A, \quad \partial_{k + 1}' = B\cdot\partial_{k + 1}
 \end{equation}
 still satisfy $\partial_k'\cdot\partial_{k + 1}' = 0$.
-A particular case is $A\cdot B = I$, which includes permutations of the cell ordering.
-The more general case regarding the image of $A\cdot B$ is needed for some irreversible transformations.
 
-\subsection{Merging}
+An important particular case is $A\cdot B = I$.
+For a permutation matrix $P$, the transformation is orthogonal ($P^{-1} = P^*$) and its entries are all integers.
+So any re-ordering of the columns of $\partial_k$ does not alter the topology as long as we also re-order the corresponding rows in $\partial_{k + 1}$.
+We can also take $A = \text{diag}(s)$ where $s$ is a vector all of whose entries are $\pm 1$ and $B = A$.
+These transformations flip the signs of certain columns of $\partial_k$ and the corresponding rows of $\partial_{k + 1}$.
+Speaking informally, we often say that individual incidence numbers don't matter as much as the relation between all cells and faces.
+The invariance of the overall structure to sign flips, as long as they are applied to the same rows and columns of the boundary matrices $\partial_k$ and $\partial_{k + 1}$, is a rigorous statement of this idea.
+
+The more general case where $A\cdot B$ is not equal to the identity matrix but its image is an invariant subspace of $\partial_{k + 1}$ is needed for other transformations, such as merging multiple cells into one or deleting cells.
+
+\subsubsection{Bistellar moves}
+
+Bistellar moves are a family of transformations to a cell complex that are known to preserve important invariants or other global properties.
+A bistellar move on a $k$-chain $\mathscr{C}$ first embeds it into the boundary of a $k + 1$-ball $\mathscr{D}$ and then replaces it with the $k$-chain $\mathscr C' = \text{closure}(\partial\mathscr D - \mathscr C)$.
+The fact that the new cells have the same boundary as the old ensures that the the fundamental relation $\partial\partial = 0$ is preserved.
+But how we polygonize the $k + 1$-ball $\mathscr{D}$ is a matter of choice.
+The constructions that follow are all based on a particular polygonization of $\mathscr{D}$ obtained by taking the topological \emph{cone} of $\mathscr{C}$, which we describe below.
+
+To describe what a topological cone is, we first have to describe the concept of a \emph{join}.
+There are two definitions, one geometric and one topological \cite{hatcher2002algebraic}.
+The geometric join of two subsets $C$ and $C'$ of Euclidean space is the set
+\begin{equation}
+    C * C' = \{\lambda\cdot c + (1 - \lambda)c' : c \in C, c' \in C', \lambda \in [0, 1]\}.
+\end{equation}
+Intuitively, the join of two spaces consists of the set of all lines between two spaces.
+If $C$ and $C$' are, respectively, $m$- and $n$-dimensional submanifolds, then $C * C'$ is $m + n + 1$-dimensional.
+An important fact for the transformations that we'll define is that the join of an $m$-simplex and an $n$-simplex is an $m + n + 1$-simplex.
+At a more abstract level, we can define the join of two topological spaces as the cylinder $C \times C' \times [0, 1]$ with the bottom face collapsed onto $C$ and the top face collapsed onto $C'$.
+Finally, the topological \emph{cone} of a space $C$ is the join with a single point.
+Topological cones are useful in algebraic topology because the homology groups of $\text{cone}(C)$ are always trivial, no matter what the homology of $C$ is.
+
+Suppose that we have a set of boundary matrices $\{\partial_0, \ldots, \partial_n\}$ for a space $\Omega$.
+\textbf{We can express the boundary matrices $\{\partial_0', \ldots, \partial_{n + 1}'\}$ for $\text{cone}(\Omega)$ in terms of the boundary matrices of the original space.}
+This construction underlies both the vertex- and face-split transformations described below.
+
+First, if the original space has $N$ vertices, the cone space adds one more.
+So $\partial_0$ is a row vector of all 1s with $N$ columns, and $\partial_0'$ is a row vector of all 1s with $N + 1$ columns. 
+Next, the cone space includes all the 1-cells or edges of the original space, so we know that $\partial_1'$ will include $\partial_1$ as a sub-matrix.
+Forming the cone space adds edges between every original vertex and the apex of the cone.
+Any one of these edges could have negative or positive incidence on the apex.
+But by applying sign flips to the columns of $\partial_1'$, which as per the previous section do not alter the topology, we can always guarantee that every edge has positive incidence to an original vertex and negative incidence to the new cone vertex.
+In linear algebraic terms,
+\begin{equation}
+    \partial_1' = \left[\begin{matrix}\partial_1 & I \\ 0 & -\mathbbm{1}^*\end{matrix}\right]
+\end{equation}
+where $\mathbbm{1}$ is the vector of all 1s.
+Moreover, we can observe here that the row vector of all 1s is the same as the 0-boundary matrix:
+\begin{equation}
+    \partial_1' = \left[\begin{matrix}\partial_1 & I \\ 0 & -\partial_0\end{matrix}\right].
+    \label{eq:cone-partial1}
+\end{equation}
+We can then state that the number of edges or 1-cells in the cone space is equal to $\#\text{vertices} + \#\text{edges}$.
+
+Now we need to determine what the remaining boundary operators should be.
+We can start by counting how many 2-cells there should be in the cone.
+Every 2-cell of the original space must also be present in the cone.
+The added 2-cells are formed through a topological join of the original 1-cells with the cone vertex.
+So we can again state that the number of 2-cells in the cone space is equal to $\#\text{2-cells} + \#\text{1-cells}$.
+Again, in principle all of the new 2-cells could have a completely arbitrary incidence w.r.t. to the original 1-cells, but by a sign flip we can ensure instead that all of these incidences are positive.
+In other words, so far, we know that the 2-boundary matrix has the form
+\begin{equation}
+    \partial_2' = \left[\begin{matrix}\partial_2 & I \\ 0 & [?]\end{matrix}\right]
+\end{equation}
+where the question mark is a matrix that has to be determined.
+We have a constraint, however, that $\partial_1'\partial_2' = 0$.
+The upper-right block of the product is
+\begin{equation}
+    \partial_1\cdot I + I\cdot [?]
+\end{equation}
+and a solution that would make this expression equal to zero is to take $[?] = -\partial_1$.
+In other words, we propose as an ansatz
+\begin{equation}
+    \partial_2' = \left[\begin{matrix}\partial_2 & I \\ 0 & -\partial_1\end{matrix}\right].
+    \label{eq:cone-partial2}
+\end{equation}
+Calculating each block by hand, we find that this guess does indeed make $\partial_1'\cdot\partial_2' = 0$.
+
+Equations \eqref{eq:cone-partial1} and \eqref{eq:cone-partial2} both have the same form but with the dimensions incremented by 1.
+We can then guess that, in general, all of the boundary matrices of the cone space up to dimension $n$ have the form
+\begin{equation}
+    \partial_k' = \left[\begin{matrix}\partial_k & I \\ 0 & -\partial_{k - 1}\end{matrix}\right].
+    \label{eq:cone-partial-k}
+\end{equation}
+Again, a rudimentary hand-computation by blocks shows that $\partial_k'\cdot\partial_{k + 1}' = 0$.
+To complete the construction, the final boundary matrix is
+\begin{equation}
+    \partial_{n + 1}' = (-1)^n\left[\begin{matrix}-I \\ \partial_n\end{matrix}\right].
+    \label{eq:cone-partial-n+1}
+\end{equation}
+\textbf{These two equations are the crux of the paper.}
+
+A few consequences of equations \eqref{eq:cone-partial-k}, \eqref{eq:cone-partial-n+1} are then apparent.
+First, the number of $k$-cells in $\text{cone}(\Omega)$ is equal to the number of $k$-cells + the number of $k - 1$-cells in $\Omega$.
+Second, while we have chosen particular signs for the incidence numbers, we can flip these signs as we see fit.
+For example, in the vertex-split transformation we will write the $n$-boundary matrix as
+\begin{equation}
+    \partial_n' = \left[\begin{matrix}\partial_n & \text{diag}(\partial_n\cdot\mathbbm{1}) \\ 0 & -\partial_{n - 1}\cdot\text{diag}(\partial_n\cdot\mathbbm{1})\end{matrix}\right]
+\end{equation}
+with an equivalent sign flip applied to the $n + 1$-boundary matrix.
+Finally, we can write down a formula for the boundary matrices of the \emph{suspension} of a space -- the topological join with two isolated points instead of one -- in the same way:
+\begin{equation}
+    \partial_{k + 1}' = \left[\begin{matrix}\partial_k & I & I \\ 0 & -\partial_{k - 1} & 0 \\ 0 & 0 & -\partial_{k - 1}\end{matrix}\right]
+\end{equation}
+and for the top cells
+\begin{equation}
+    \partial_{n + 1}' = (-1)^n\left[\begin{matrix}-I & +I \\ +\partial_n & 0 \\ 0 & -\partial_n\end{matrix}\right].
+\end{equation}
+Suspensions will appear again when we consider 2-3 flips of tetrahedra and multi-face retriangulation.
+
+Before we proceed to the transformations themselves, we should explain the sign convention in equation \eqref{eq:cone-partial-n+1}.
+The sign of the final boundary matrix is ultimately arbitrary, as we can always multiply on the right by an arbitrary sign flip and still preserve $\partial\partial = 0$.
+But we can pick a normalization by the following argument.
+The standard construction defines a $k$-simplex as the convex hull of $k + 1$ points $\{v_0, \ldots, v_k\}$, and the oriented boundary of the simplex as
+\begin{equation}
+    \partial\{v_0,\ldots,v_k\} = \sum_j(-1)^j\{v_0, \ldots, \hat{v_j}, \ldots, v_k\}.
+\end{equation}
+But we can also construct the simplex inductively as a cone space.
+A 0-simplex is a single point, and a $k + 1$-simplex is the cone of a single point and the $k$-simplex with boundary matrices chosen according to equations \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1}.
+Choosing the normalization factor $(-1)^n$ makes the repeated cone construction isomorphic to the positively-oriented simplex through a sequence of permutations and sign flips.
+With no normalization at all, the even-dimensional simplices under the cone construction are instead isomorphic to the standard construction \emph{but with the opposite orientation}.
+
+Equation \eqref{eq:cone-partial-k} has appeared before in the literature on homological algebra \cite{gelfand1994homological}.
+Its use for practical computations, which we demonstrate below, has not appeared elsewhere as far as we know.
+
+
+\subsection{Specific operations}
+
+Having written down the explicit formulas \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} for the boundary matrices of a cone, we can then apply them to define transformations of guaranteed validity.
+
+\subsubsection{Merging}
 
 A \emph{merge} of a set of $k$-cells replaces them with a single cell (provided that their union is simply-connected).
 Merging is a column operation on the matrix $\partial_k$.
@@ -178,9 +310,9 @@ For merging cells of top dimension $n$, there are no higher-dimensional cells to
 \emph{Edge collapsing}, the key transformation in surface simplification algorithms \cite{gueziec1995surface}, is a merge of two vertices.
 
 
-\subsection{Splitting}
+\subsubsection{Splitting}
 
-A \emph{split} divides up the union of several polytopes along a vertex.
+A \emph{vertex-split} divides up the union of several polytopes along a vertex.
 The key correctness criteria for this operation are that (1) every newly-created polytope contains the splitting vertex and (2) the boundary of the sum of all polytopes does not change.
 This second condition can be expressed mathematically as
 \begin{equation}
@@ -312,7 +444,7 @@ To our knowledge, using these equations for doing real computations is entirely 
 
 The Bowyer-Watson algorithm for Delaunay triangulation and all common algorithms for computing convex hulls only require the split transformation \cite{cheng2013delaunay}.
 
-\subsection{Splitting and merging}
+\subsubsection{Splitting and merging}
 
 Other transformations can be defined by combining a sequence of splits and merges.
 For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges and figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
@@ -405,7 +537,7 @@ Using the boundary operators might make it possible to implement complex transfo
 The split transformation that we derived here is based on computing the topological cone of a space and then removing the base of the cone.
 Multiface retriangulation, as advocated in \cite{misztal2009tetrahedral}, is a transformation of a \emph{suspension}, a related construction in algebraic topology \cite{hatcher2002algebraic}.
 
-\subsection{Bisection}
+\subsubsection{Bisection}
 
 Finally, we consider the problem of how to split a single $k$-cell $P$ into two or more cells along a collection of $(k - 1)$-cells.
 In order to be able to split the top cell, we need to assume a certain connectivity structure between its faces.
