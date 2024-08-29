@@ -40,7 +40,7 @@ By representing the objects of study using the language of linear algebra, we ca
 \pagestyle{empty}
 
 
-% --------------------
+% ====================
 \section{Introduction}
 
 Nearly all constructions in unstructured meshing require the ability to perform local transformations to the mesh topology.
@@ -62,153 +62,162 @@ We show how other higher-level transformations can be implemented in terms of th
 Finally, as a proof-of-concept, we implemented algorithms for computing convex hulls in arbitrary dimensions and constrained Delaunay triangulations in 2D.
 
 
-% --------------
+% ==============
 \section{Theory}
 
-\subsection{Polygonal complexes}
+In this section, we will describe polytopal complexes, a class which includes all common types of meshes.
+The boundary operators on a polytopal complex can be used as a data structure to represent the complex.
+Next, we will describe how to convert between a polytopal complex and the more familiar representation of a simplicial complex as an array describing which vertices are contained in each simplex.
+Finally, we'll then introduce the concept of a topological cone and give explicit formulae for the boundary operators of a cone.
+The transformations that we describe in the next section all ``factor through'' the topological cone.
 
-The mathematical theory that underlies the rest of the paper is basic algebraic topology, but some prefatory remarks are in order about why we chose certain abstractions to work with and not others.
-An introduction to algebraic topology might start from the definition simplicial or cubical complexes.
-These structures are advantageous for two reasons.
-First, their combinatorial structure has a clear relation to their geometry.
-For example, the ordering of the vertices of a simplex has to obey the right-hand rule, i.e. the determinant of a certain matrix must be positive.
-We say that the whole complex is positively-oriented if each simplex is.
-Second, the combinatorial structure lends itself in a direct way to the definition of \emph{incidence numbers} between $k$-cells and $k - 1$-cells of the complex.
-The matrices of such incidence numbers then become the representatives of the boundary operators on a chain complex.
-From these boundary operators one can then construct the associated homology groups.
-By contrast, one could instead consider the category of CW complexes, which has certain theoretical and computational advantages and which includes both simplicial and cubical complexes.
-But the definition of incidence numbers for CW complexes requires much more sophisticated concepts that do not relate in an obvious way to some combinatorial structure.
+% ------------------------------
+\subsection{Polytopal complexes}
 
-Here, we consider \emph{polytopal complexes}, which includes the simplicial and cubical cases but is less general than the full CW category.
-In many applications, we want to end up with a simplicial (or cubical) complex.
-When our data structure can only describe simplicial (resp. cubical) complexes, any transformation has to stay in the right category from start to finish.
-The advantage of polytopal complexes is that we can explicitly represent non-simplicial intermediate states.
-For example, we might merge several triangles of a mesh into a polygon which we then re-triangulate in a different way.
-With this flexibility comes a cost: some of the definitions are more involved and we have to make some more assumptions from the outset.
+We will assume as given the notions of simplices, cubes, polytopes, and meshes or spatial subdivisions made up of these objects.
+The mathematical theory that underlies the rest of the paper is basic algebraic topology.
+We will present very abbreviated definitions; we refer to \cite{dicarlo2007solid} for a longer exposition of the algebraic-topological point of view on solid modeling and to \cite{hatcher2002algebraic} for the theory of algebraic topology.
 
-A polytopal complex $\Omega$ is a finite collection of \emph{cells} such that, if $\sigma$ and $\tau$ are cells of $\Omega$, then their intersection $\sigma\cap\tau$ is also in $\Omega$.
-Each cell has a dimension and the dimension of $\Omega$ is the highest dimension of any of its cells.
-The $k$-\emph{skeleton} is the set of all $k$-dimensional cells of $\Omega$, which we write as $\text{skel}_k(\Omega)$.
-We moreover assume that, for any $k$-cell $\sigma$ and $k - 1$-cell $\tau$, there is an \emph{incidence number} between them, which we write as $[\sigma, \tau]$, such that
+Let $\Omega$ be a polytopal mesh of some domain in Euclidean space.
+Given a $k$-dimensional polytope $\sigma$ and a $k - 1$-dimensional face $\tau$ of $\sigma$, the \emph{incidence number} is an integer that describes the handedness or orientation with which $\tau$ is attached into $\sigma$.
+We will write the incidence number as $[\sigma, \tau]$.
+An informal definition of the incidence number is
 \begin{equation}
-    [\sigma, \tau] = \begin{cases} +1 & \tau\text{ is attached positively in }\sigma \\ -1 & \tau\text{ is attached negatively in }\sigma \\ 0 & \tau\text{ is not in }\sigma\end{cases}.
+    [\sigma, \tau] \equiv \begin{cases} +1 & \tau\text{ is attached positively in }\sigma \\ -1 & \tau\text{ is attached negatively in }\sigma \\ 0 & \tau\text{ is not in }\sigma\end{cases}.
 \end{equation}
-We will use the idea of incidence in an informal sense but we refer to \cite{hatcher2002algebraic} for the formal definition.
-Our definition of a polytopal complex rules out the possibility of higher-degree attaching, i.e. incidence numbers that take values greater than +1 or less than -1.
-In formal parlance, we are only interested in \emph{regular} complexes.
+This informal definition is enough for the constructions that follow.
+For example, if $e = \langle v_0, v_1\rangle$ is an edge connecting the vertices $v_0$ and $v_1$, then $[e, v_0] = -1$ and $[e, v_1] = +1$.
+Likewise, if we consider a positively-oriented triangle $t = \langle v_0, v_1, v_2\rangle$, then the incidence number of $t$ to the edges $\langle v_0, v_1\rangle$, $\langle v_1, v_2\rangle$, and $\langle v_2, v_0\rangle$ are all positive.
 
-In the case of simplicial complexes, the incidence numbers can be defined combinatorially through the ordering of vertices.
-For cubical complexes, the incidence numbers are instead defined through tensor product structure.
-There is no simple combinatorial way to define the incidence numbers of a polytopal complex and we have to instead assume that they are given from the outset.
-One way to do so is to start with a simplicial or cubical complex and transform it using the operations described below into a more general polytopal complex.
-
-\subsection{Boundary operators}
-
-The main character of our story is not the polytopal complex itself but rather the boundary operators between the chain modules.
-To define what a boundary operator is we first need to describe what spaces it acts on.
-A \emph{chain} $C$ is a formal integer linear combination of $k$-cells:
+Let $n_k$ be the number of cells of $\Omega$ of dimension $k$.
+Suppose additionally that we have numbered all of the $k - 1$-cells as $\{\tau_i\}_{i = 1}^{n_{k - 1}}$ and the $k$-cells as $\{\sigma_j\}_{j = 1}^{n_k}$.
+The $k$-th boundary matrix $\partial_k$ is an integer matrix of size $n_{k - 1} \times n_k$.
+The $i, j$ entry of this matrix is
 \begin{equation}
-    C = c_1\sigma_1 + \ldots + c_m\sigma_m
+    (\partial_k)_{ij} = [\sigma_j, \tau_i].
 \end{equation}
-where the $c_i$ are integer coefficients and $\sigma_i$ are $k$-cells.
-We write the space of all $k$-chains on a complex $\Omega$ as $\mathscr{C}^k(\Omega)$ or just $\mathscr{C}^k$ where the underlying space is clear from context.
+These operators act on certain spaces of \emph{chains} but the theory behind this will not be important for the following.
+By reading off columns of each boundary matrix, we can quickly determine which $k - 1$-cells are faces of a given $k$-cell and how they are attached.
+To continue with the example above, we might say that if $e = \langle v_0, v_1$ is an edge, then $\partial e = +v_1 - v_0$.
+Likewise, if $t = \langle v_0, v_1, v_2\rangle$ is a triangle, then $\partial t = \langle v_0, v_1\rangle + \langle v_1, v_2\rangle + \langle v_2, v_0\rangle$.
 
-We can now define the boundary operators.
-The $k$-th boundary operator $\partial_k$ is a mapping from the $k$-chains to $k - 1$-chains:
-\begin{equation}
-    \partial_k : \mathscr{C}^k \to \mathscr{C}^{k - 1}.
-\end{equation}
-Given a $k$-cell $\sigma$, we define the boundary of $\sigma$ as
-\begin{equation}
-    \partial_k\sigma = \sum_{\tau \in \text{skel}_{k - 1}(\Omega)}[\sigma, \tau]\tau
-\end{equation}
-where the sum is over all $k - 1$-dimensional cells $\tau$.
-We then extend the definition of $\partial_k$ to all of $\mathscr C^k$ by $\mathbb{Z}$-linearity.
 \textbf{The most important fact about boundary operators is that the boundary of a boundary is always equal to zero:}
 \begin{equation}
     \partial_k\cdot\partial_{k + 1} = 0.
     \label{eq:ddzero}
 \end{equation}
-This equation is a consequence of the formal definition of incidence numbers on a CW complex \cite{hatcher2002algebraic}.
-Alternatively, if we choose to define a polytopal complex by its boundary operators, we can take the last equation to be a definition or precondition.
+For formal proofs of this relation, see \cite{hatcher2002algebraic} for the simplicial case and \cite{massey2019basic} for the cubical and general cases.
 
 There is one final definition that will clarify a later construction at a critical juncture.
-The definitions above assume that the chain complex terminates at $\mathscr{C}^0$, i.e. integer linear combinations of the vertices or 0-dimensional cells.
-We will instead include a single \emph{bottom} cell $\bot$ of dimension $-1$, together with a corresponding chain space $\mathscr{C}^{-1}$ which is isomorphic to $\mathbb{Z}$.
-We then wish to define a 0-boundary operator $\partial_0 : \mathscr{C}^0 \to \mathscr{C}^{-1}$ such that $\partial_0\partial_1 = 0$.
-We then define the boundary of any vertex $v$ to be $+\bot$; extending by linearity, the 0-boundary operator acts on the chain $\sum_kc_kv_k$ according to
+The definitions above assume that the mesh terminates at the points or 0-dimensional cells.
+We will instead include a single \emph{bottom} cell $\bot$ of dimension $-1$ and we will say that the bottom cell is positively incident to every vertex, i.e.
 \begin{equation}
-    \partial_0\left(\sum_kc_kv_k\right) = \left(\sum_kc_k\right)\bot.
+    [v, \bot] = +1
 \end{equation}
-In the algebraic topology literature, the inclusion of this bottom cell and chain space is used to form the \emph{reduced} homology groups.
-
-Once we have chosen bases for the vector spaces $C^k$ and $C^{k - 1}$, we can represent the boundary operator $\partial_k$ as a matrix with integer entries.
-These sparse integer matrices are the data structure that we will use to describe meshes and which we will perform transformations on.
-The condition \eqref{eq:ddzero} is an invariant of this data structure.
-Preserving this invariant constrains any transformations that we might define.
-
-The matrix that represents the 0-boundary operator is the row vector of all 1s:
+for all vertices $v$.
+We can then define the 0-boundary operator $\partial_0$ as a row vector of all 1s:
 \begin{equation}
     \partial_0 = \mathbbm{1}^*.
     \label{eq:0-boundary-matrix}
 \end{equation}
-At a linear algebraic level, the condition that $\partial_0\partial_1 = 0$ now implies that the boundary of every edge has one positive and one negative vertex: $\partial e = v_i - v_j$ for some $i$, $j$.
+The condition that $\partial_0\partial_1 = 0$ now implies that the boundary of every edge has one positive and one negative vertex: $\partial e = v_i - v_j$ for some $i$, $j$.
 We cannot have that, say, $\partial e = v_i + v_j$.
-This outcome would be undesirable but no other condition on chain complexes explicitly forbids it.
+This outcome would be undesirable but we have not explicitly forbidden it otherwise.
 Equation \eqref{eq:0-boundary-matrix} will reappear when we define the split transformation.
 
-
-\subsection{Symmetries}
+The boundary matrices do not capture important geometric data describing how cells are embedded into Euclidean space.
+We could have the same connectivity structure for two different triangular meshes, one which uses only piecewise linear facets and another that uses curved polynomial mappings.
+In the remainder, we consider only transformations to the connectivity structure or topology and not to the geometry.
 
 What kinds of alterations or transformations to a set of boundary matrices preserve the fundamental relation $\partial\partial = 0$?
-If $A$, $B$ are integer matrices and $\{\partial_0, \ldots, \partial_n\}$ are boundary matrices, we define
+Suppose $A$, $B$ are integer matrices, $\{\partial_0, \ldots, \partial_n\}$ are boundary matrices, and we define
 \begin{equation}
-    \partial_k' = \partial_k\cdot A, \quad \partial_{k + 1}' = B\cdot\partial_{k + 1}
+    \partial_k' = \partial_k\cdot A, \quad \partial_{k + 1}' = B\cdot\partial_{k + 1}.
 \end{equation}
-and ask what conditions we need on $A$ and $B$ in order to guarantee that $\partial_k'\cdot\partial_{k + 1}' = 0$.
-A sufficient condition is that \emph{the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$}.
-
-An important particular case is $A\cdot B = I$.
-For a permutation matrix $P$, the transformation is orthogonal ($P^{-1} = P^*$) and its entries are all integers.
-So any re-ordering of the columns of $\partial_k$ does not alter the topology as long as we also re-order the corresponding rows in $\partial_{k + 1}$.
-We can also take $A = \text{diag}(s)$ where $s$ is a vector all of whose entries are $\pm 1$ and $B = A$.
-These transformations flip the signs of certain columns of $\partial_k$ and the corresponding rows of $\partial_{k + 1}$.
-Speaking informally, we often say that individual incidence numbers don't matter as much as the relation between all cells and faces.
-The invariance of the overall structure to sign flips, as long as they are applied to the same rows and columns of the boundary matrices $\partial_k$ and $\partial_{k + 1}$, is a rigorous statement of this idea.
-
+What conditions do we need on $A$ and $B$ in order to guarantee that $\partial_k'\cdot\partial_{k + 1}' = 0$?
+One sufficient condition is that \emph{the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$}.
+An important particular case is $A\cdot B = I$, which includes both permutations and sign flips.
+We can reorder the columns of $\partial_k$ so long as we apply the inverse permutation to the rows of $\partial_{k + 1}$.
+Likewise, we can flip the sign of any column of $\partial_k$ as long as we flip the sign of the corresponding row of $\partial_{k + 1}$.
+Speaking informally, we can say that individual incidence numbers don't matter as much as the relation between all cells and faces.
 The more general case where $A\cdot B$ is not equal to the identity matrix but its image is an invariant subspace of $\partial_{k + 1}$ is needed for other transformations, such as merging multiple cells into one or deleting cells.
 
+\subsection{Simplicial complexes}
+
+For many problems in meshing, the goal is to produce a mesh where all the cells are simplices or cubes rather than general polytopes.
+The utility of polytopal meshes is that they can represent intermediate states that are not of the right type.
+For example, one might merge a set of triangles into a polygon and then split or subdivide the polygon into a different triangulation incrementally.
+A polytopal mesh can represent the polygonal intermediate states, whereas if one could only represent triangular data then this transformation has to be completed all in one shot.
+But the ability to use polytopal meshes, or more specifically the boundary operators, as an intermediate step relies on the ability to convert between the two.
+
+We assume that the standard data structure for a pure, orientable $k$-dimensional simplicial complex is an array of size $n \times (k + 1)$ where $n$ is the number of top simplices.
+Each row of this array stores the vertices of the corresponding simplex, ordered in such a way to give a positive orientation.
+For a $k$-dimensional complex embedded in $\mathbb{R}^k$, positive orientation is the usual condition that the determinant of the matrix formed by a simplex's points in homogeneous coordinates is positive.
+The order is non-unique up to any permutation with positive parity.
+
+\textbf{Simplicial $\rightarrow$ polytopal}.
+Let $\sigma = \langle v_0, \ldots, v_k\rangle$ be an oriented $k$-simplex.
+If we re-order the vertices of $\sigma$ by some permutation $p$, then we get the same simplex if $p$ has positive parity and the ``opposite'' simplex if $p$ has negative parity:
+\begin{equation}
+    \langle v_{p(0)},\ldots,v_{p(k)}\rangle = \text{parity}(p)\cdot\langle v_0,\ldots, v_k\rangle
+\end{equation}
+The incidence number from $\sigma$ to the face $\tau = \langle v_0, \ldots, \hat v_j, \ldots, v_k\rangle$ obtained by removing the $j$th vertex is positive if $j$ is even and negative if $j$ is odd, or
+\begin{equation}
+    [\sigma, \tau] = (-1)^j.
+    \label{eq:simplicial-incidence-numbers}
+\end{equation}
+We can motivate this formula by observing that if $\sigma$ is in $\mathbb{R}^k$, the oriented half-space formed by the $j$th face contains $\sigma$ if $j$ is even and does not contain $\sigma$ if $j$ is odd.
+Given a numbering scheme for all the simplices of the mesh, the previous equation gives us the incidence numbers that we need to fill in the entries of the boundary matrices for each simplex.
+
+\textbf{Polytopal $\rightarrow$ simplicial}.
+Suppose that $\{\partial_0, \ldots, \partial_k\}$ are the boundary operators of a single simplex with vertices $v_0, \ldots, v_k$.
+We do not know whether the right order of the vertices is $\langle v_0,\ldots,v_k\rangle$ or some orientation-reversing permutation.
+Now let $\{\partial_0',\ldots,\partial_k'\}$ be the boundary matrices of a simplex using the canonical choice of incidence numbers from equation \eqref{eq:simplicial-incidence-numbers}.
+The goal is to find an isomorphism of the two complexes.
+We take the starting permutation and sign flip matrices to be $P_0 = I_{n_0}$ where $n_0$ is the number of vertices and $s_0 = \mathbbm{1}$.
+For each dimension $1 \le j < k$, we find a permutation matrix $P_j$ and sign flips $s_j$ such that
+\begin{equation}
+    \text{diag}(s_{j - 1})\cdot P_{j - 1}^*\cdot\partial_j \cdot P_j\cdot \text{diag}(s_j) = \partial_j'.
+\end{equation}
+The permutations can be found by finding columns with the same sets of non-zero entries.
+Finally, at dimension $k$, we will find that $\text{diag}(s_{k - 1})\cdot P_{k - 1}^*\partial_k$ is a column vector of all +1 or -1.
+If the resulting vector is positive, then the ordering $\langle v_0,\ldots,v_k\rangle$ will result in boundary matrices that are isomorphic to the input boundary matrices.
+Otherwise, any orientation-reversing permutation of that order is the correct choice.
+We can then apply this logic to each top-dimensional cell of a whole complex provided that it is known to be simplicial.
+If at any point a set of permutations and sign flips cannot be found, the resulting polytopal complex was not simplicial.
+
+% ----------------------
 \subsection{Cone spaces}
 
-Bistellar moves are a family of transformations to a cell complex that are known to preserve important invariants or other global properties.
-A bistellar move on a $k$-chain $\mathscr{C}$ first embeds it into the boundary of a $k + 1$-ball $\mathscr{D}$ and then replaces it with the $k$-chain $\mathscr C' = \text{closure}(\partial\mathscr D - \mathscr C)$.
+In the next section, we will show several transformations on a polytopal complex that are expressible as operations on their boundary matrices.
+Each of these transformations is a type of \emph{bistellar move}, also referred to in the literature as a Pachner move after U. Pachner \cite{pachner1990shellings, pachner1991pl, casali1995note}.
+A bistellar move of a set of cells of a mesh first embeds them into the boundary of a higher-dimensional ball, and then replaces them with the closure of their complement in the boundary of the ball.
+These transformations are known to preserve important invariants and other global properties.
 The fact that the new cells have the same boundary as the old ensures that the the fundamental relation $\partial\partial = 0$ is preserved.
-But how we polygonize the $k + 1$-ball $\mathscr{D}$ is a matter of choice.
-The constructions that follow are all based on a particular polygonization of $\mathscr{D}$ obtained by taking the topological \emph{cone} of $\mathscr{C}$, which we describe below.
+But how we polygonize the higher-dimensional ball is a matter of choice.
+The constructions that follow are all based on a particular polygonization obtained by forming the topological \emph{cone}, which we describe below.
 
-To describe what a topological cone is, we first have to describe the concept of a \emph{join}.
-There are two definitions, one geometric and one topological \cite{hatcher2002algebraic}.
-The geometric join of two subsets $C$ and $C'$ of Euclidean space is the set
+To describe what a topological cone is, it is helpful to first describe the concept of a \emph{join}.
+The join of two subsets $C$ and $C'$ of Euclidean space is the set
 \begin{equation}
     C * C' = \{\lambda\cdot c + (1 - \lambda)c' : c \in C, c' \in C', \lambda \in [0, 1]\}.
 \end{equation}
-Intuitively, the join of two spaces consists of the set of all lines between two spaces.
+Intuitively, the join of two spaces consists of the set of all lines between them.
 If $C$ and $C$' are, respectively, $m$- and $n$-dimensional submanifolds, then $C * C'$ is $m + n + 1$-dimensional.
 An important fact for the transformations that we'll define is that the join of an $m$-simplex and an $n$-simplex is an $m + n + 1$-simplex.
-At a more abstract level, we can define the join of two topological spaces as the cylinder $C \times C' \times [0, 1]$ with the bottom face collapsed onto $C$ and the top face collapsed onto $C'$.
-Finally, the topological \emph{cone} of a space $C$ is the join with a single point.
-Topological cones are useful in algebraic topology because the homology groups of $\text{cone}(C)$ are always trivial, no matter what the homology of $C$ is.
 
+The topological cone of a space $\Omega$, which we will write as $\text{cone}(\Omega)$, is the join with a single point.
+We will refer to this added point as the \emph{apex}.
 Suppose that we have a set of boundary matrices $\{\partial_0, \ldots, \partial_n\}$ for a space $\Omega$.
 \textbf{We can express the boundary matrices $\{\partial_0', \ldots, \partial_{n + 1}'\}$ for $\text{cone}(\Omega)$ in terms of the boundary matrices of the original space.}
 This construction underlies both the vertex- and face-split transformations described below.
 
 First, if the original space has $N$ vertices, the cone space adds one more.
-So $\partial_0$ is a row vector of all 1s with $N$ columns, and $\partial_0'$ is a row vector of all 1s with $N + 1$ columns. 
+So $\partial_0$ is a row vector of all 1s with $N$ columns, and $\partial_0'$ is a row vector of all 1s with $N + 1$ columns.
 Next, the cone space includes all the 1-cells or edges of the original space, so we know that $\partial_1'$ will include $\partial_1$ as a sub-matrix.
 Forming the cone space adds edges between every original vertex and the apex of the cone.
 Any one of these edges could have negative or positive incidence on the apex.
-But by applying sign flips to the columns of $\partial_1'$, which as per the previous section do not alter the topology, we can always guarantee that every edge has positive incidence to an original vertex and negative incidence to the new cone vertex.
+But by applying sign flips to the columns of $\partial_1'$, which as per the previous section does not alter the topology, we can always guarantee that every edge has positive incidence to an original vertex and negative incidence to the new cone vertex.
 In linear algebraic terms,
 \begin{equation}
     \partial_1' = \left[\begin{matrix}\partial_1 & I \\ 0 & -\mathbbm{1}^*\end{matrix}\right]
@@ -232,13 +241,13 @@ In other words, so far, we know that the 2-boundary matrix has the form
     \partial_2' = \left[\begin{matrix}\partial_2 & I \\ 0 & [?]\end{matrix}\right]
 \end{equation}
 where the question mark is a matrix that has to be determined.
-We have a constraint, however, that $\partial_1'\partial_2' = 0$.
-The upper-right block of the product is
+We have a constraint, however, that $\partial_1'\cdot\partial_2' = 0$.
+The upper-right block of the product $\partial_1'\cdot\partial_2'$ is
 \begin{equation}
     \partial_1\cdot I + I\cdot [?]
 \end{equation}
 and a solution that would make this expression equal to zero is to take $[?] = -\partial_1$.
-In other words, we propose as an ansatz
+In other words, we make the ansatz
 \begin{equation}
     \partial_2' = \left[\begin{matrix}\partial_2 & I \\ 0 & -\partial_1\end{matrix}\right].
     \label{eq:cone-partial2}
@@ -257,6 +266,7 @@ To complete the construction, the final boundary matrix is
     \partial_{n + 1}' = (-1)^n\left[\begin{matrix}-I \\ \partial_n\end{matrix}\right].
     \label{eq:cone-partial-n+1}
 \end{equation}
+We will explain the sign convention below.
 \textbf{These two equations are the crux of the paper.}
 
 A few consequences of equations \eqref{eq:cone-partial-k}, \eqref{eq:cone-partial-n+1} are then apparent.
@@ -278,12 +288,9 @@ and for the top cells
 Suspensions will appear again when we consider 2-3 flips of tetrahedra and multi-face retriangulation.
 
 Before we proceed to the transformations themselves, we should explain the sign convention in equation \eqref{eq:cone-partial-n+1}.
-The sign of the final boundary matrix is ultimately arbitrary, as we can always multiply on the right by an arbitrary sign flip and still preserve $\partial\partial = 0$.
+The sign of the final boundary matrix is ultimately arbitrary -- we can multiply on the right by any sign flip and still preserve $\partial\partial = 0$.
 But we can pick a normalization by the following argument.
-The standard construction defines a $k$-simplex as the convex hull of $k + 1$ points $\{v_0, \ldots, v_k\}$, and the oriented boundary of the simplex as
-\begin{equation}
-    \partial\{v_0,\ldots,v_k\} = \sum_j(-1)^j\{v_0, \ldots, \hat{v_j}, \ldots, v_k\}.
-\end{equation}
+The standard construction defines the boundary of a $k$-simplex according to equation \eqref{eq:simplicial-incidence-numbers}.
 But we can also construct the simplex inductively as a cone space.
 A 0-simplex is a single point, and a $k + 1$-simplex is the cone of a single point and the $k$-simplex with boundary matrices chosen according to equations \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1}.
 Choosing the normalization factor $(-1)^n$ makes the repeated cone construction isomorphic to the positively-oriented simplex through a sequence of permutations and sign flips.
@@ -293,10 +300,12 @@ Equation \eqref{eq:cone-partial-k} has appeared before in the literature on homo
 Its use for practical computations, which we demonstrate below, has not appeared elsewhere as far as we know.
 
 
+% =======================
 \section{Transformations}
 
 Having written down the explicit formulas \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} for the boundary matrices of a cone, we can then apply them to define transformations of guaranteed validity.
 
+% ------------------
 \subsection{Merging}
 
 A \emph{merge} of a set of $k$-cells replaces them with a single cell (provided that their union is simply-connected).
@@ -313,39 +322,42 @@ For merging cells of top dimension $n$, there are no higher-dimensional cells to
 
 \emph{Edge collapsing}, the key transformation in surface simplification algorithms \cite{gueziec1995surface}, is a merge of two vertices.
 
+% ---------------------------
+\subsection{Vertex-splitting}
 
-\subsection{Splitting}
-
-A \emph{vertex-split} divides up the union of several polytopes along a vertex.
+A \emph{vertex-split} divides the union of several polytopes along a vertex.
 The key correctness criteria for this operation are that (1) every newly-created polytope contains the splitting vertex and (2) the boundary of the sum of all polytopes does not change.
 This second condition can be expressed mathematically as
 \begin{equation}
-    \partial_k'\mathbbm{1} = \left[\begin{matrix}\partial_k\mathbbm{1} \\ 0\end{matrix}\right].
+    \partial_n'\cdot\mathbbm{1} = \left[\begin{matrix}\partial_n\cdot\mathbbm{1} \\ 0\end{matrix}\right].
     \label{eq:split-preserves-boundaries}
 \end{equation}
-We'll describe the 2D case first and then proceed to arbitrary dimensions.
+The cells of the vertex split can be obtained as the ``top'' of the topological cone of the original cells, so equations \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} are applicable with some modifications.
+Boundary matrices $\partial_0'$ through $\partial_{n - 1}'$ all transform according to equation \eqref{eq:cone-partial-k}.
 
-Suppose that a collection of adjacent polygons has the boundary operators $\partial_1$ and $\partial_2$.
-We first have to draw edges between the new vertex and all the vertices of the polygon.
-The orientation of these new edges is arbitrary, so we can assume that every edge goes from the splitting vertex $v$ to the polygon vertices.
-Another way of stating this is that every new edge $e$ is negatively-incident to $v$ and positively-incident to some polygon vertex.
-In terms of matrices, the new 1-boundary operator is
-\begin{equation}
-    \partial_1' = \left[\begin{matrix}\partial_1 & I \\ 0 & -\mathbbm{1}^*\end{matrix}\right]
-    \label{eq:split-1-2d}
-\end{equation}
-where $I$ is the identity matrix.
-The key step here is defining the 2-boundary matrix:
-\begin{equation}
-    \partial_2' = \left[\begin{matrix}\text{diag}(\partial_2\cdot\mathbbm{1}) \\ -\partial_1\cdot\text{diag}(\partial_2\cdot\mathbbm{1})\end{matrix}\right]
-\end{equation}
-A rudimentary calculation shows that $\partial_1'\partial_2' = 0$.
-Since $\text{diag}(z)\cdot\mathbbm{1} = z$ for any vector $z$, we also find that
-\begin{equation}
-    \partial_2'\mathbbm{1} = \left[\begin{matrix}\partial_2\mathbbm{1} \\ 0\end{matrix}\right]
-\end{equation}
-which is exactly equation \eqref{eq:split-preserves-boundaries}, or that the new polygons have the same boundary as the old.
+For dimension $n$, we want to do three things differently.
+First, the cone over a space has 1 higher dimension, but we want to transform a space to one of the same dimension.
+We thus discard the $n + 1$-th boundary matrix from the cone when we form a vertex split.
+Second, the cone over a space includes the space itself as a sub-complex, whereas we want to remove the original polytopes.
+The resulting modification is that we discard the lower- and upper-left blocks of $\partial_n'$ from the usual formula for cones.
+Finally, we want to preserve the original boundary of the starting polytopes, as specified in equation \eqref{eq:split-preserves-boundaries}.
+The alteration to the usual cone formula is to multiply $\partial_n'$ on the right by the diagonal matrix $\text{diag}(\partial_n\cdot\mathbbm{1})$.
+Putting all of these together, we find that
+\begin{align}
+    \partial_n' & \equiv \left[\begin{matrix}\partial_n & I \\ 0 & -\partial_{n - 1}\end{matrix}\right]\cdot \underbrace{\left[\begin{matrix}0 \\ I\end{matrix}\right]}_{\text{cut left}\atop\text{column}}\cdot \underbrace{\text{diag}(\partial_n\cdot\mathbbm{1})}_{\text{preserve}\atop\text{boundaries}} \nonumber\\
+        & = \left[\begin{matrix}\text{diag}(\partial_n\cdot\mathbbm{1}) \\ -\partial_{n - 1}\cdot\text{diag}(\partial_n\cdot\mathbbm{1})\end{matrix}\right]
+    \label{eq:vertex-split-n}
+\end{align}
+We can see that this choice of $\partial_n'$ satisfies equation \eqref{eq:split-preserves-boundaries} by using the fact that $\text{diag}(z)\cdot\mathbbm{1} = z$ for any vector $z$.
+
+A final pruning step is necessary when we split the union of more than one polytope.
+The vector $\partial_n\cdot\mathbbm{1}$ will have zero entries along any interior faces.
+Consequently, some $n - 1$-cells of the newly-generated complex are not in the boundary of any $n$-cell.
+We can then remove these zero rows from $\partial_n'$ and columns from $\partial_{n - 1}'$.
+Proceeding down by dimension, we remove any row from $\partial_k'$ that is all zeros and the corresponding column from $\partial_{k - 1}'$ for $k = n - 1, \ldots, 1$.
+
 Figure \ref{fig:split-transformation} illustrates the split transformation on a single quadrilateral and shows the boundary matrices before and after.
+The Bowyer-Watson algorithm for computing Delaunay triangulations and all common algorithms for computing convex hulls require only the vertex-split transformation \cite{cheng2013delaunay}.
 
 \begin{figure}[h]
     \begin{center}
@@ -434,20 +446,7 @@ Figure \ref{fig:split-transformation} illustrates the split transformation on a 
     \label{fig:split-transformation}
 \end{figure}
 
-We can get an idea for how to extend this to $n$ dimensions by remembering the 0-boundary operator (equation \eqref{eq:0-boundary-matrix}).
-In equation \eqref{eq:split-1-2d}, we can replace $\mathbbm{1}^* = \partial_0$.
-This suggests the transformation
-\begin{align}
-    \partial_k' & = \left[\begin{matrix}\partial_k & I \\ 0 & -\partial_{k - 1}\end{matrix}\right] \label{eq:split-k} \\
-    \partial_n' & = \left[\begin{matrix}\text{diag}(\partial_n\cdot\mathbbm{1}) \\ -\partial_{n - 1}\text{diag}(\partial_n\cdot\mathbbm{1})\end{matrix}\right] \label{eq:split-n}
-\end{align}
-Again, a rudimentary calculation shows that the fundamental equation \eqref{eq:ddzero} still holds and that the new polytopes have the same boundary as the old.
-
-Equation \eqref{eq:split-k} has appeared before in the literature on homological algebra as the expression for the boundary operators of the \emph{cone} of a space \cite{gelfand1994homological}.
-To our knowledge, using these equations for doing real computations is entirely new.
-
-The Bowyer-Watson algorithm for Delaunay triangulation and all common algorithms for computing convex hulls only require the split transformation \cite{cheng2013delaunay}.
-
+% --------------------------------
 \subsection{Splitting and merging}
 
 Other transformations can be defined by combining a sequence of splits and merges.
@@ -541,25 +540,26 @@ Using the boundary operators might make it possible to implement complex transfo
 The split transformation that we derived here is based on computing the topological cone of a space and then removing the base of the cone.
 Multiface retriangulation, as advocated in \cite{misztal2009tetrahedral}, is a transformation of a \emph{suspension}, a related construction in algebraic topology \cite{hatcher2002algebraic}.
 
-\subsection{Bisection}
+% -------------------------
+\subsection{Face-splitting}
 
-Finally, we consider the problem of how to split a single $k$-cell $P$ into two or more cells along a collection of $(k - 1)$-cells.
+Finally, we consider the problem of how to split a single $n$-cell $P$ into two or more cells along a collection of $(n - 1)$-cells.
 In order to be able to split the top cell, we need to assume a certain connectivity structure between its faces.
 A $k$-\emph{path} in $\Omega$ is a collection $\{f_0, s_0, f_1, s_1, \ldots, f_{m - 1}, s_{m - 1}, f_m\}$ such that $s_i$ is a common sub-face of both $f_i$ and $f_{i + 1}$ for each $i$.
 Given two collections of faces $F_1$, $F_2$, we say that a third collection of faces $F$ is a \emph{separator} for $F_1$, $F_2$ if any path from a cell $f_1$ in $F_1$ to a cell $f_2$ in $F_2$ must include some cell $f$ in $F$.
-The definition is similar to that of graph theory but with some important differences in the case of cell complexes.
+The definition is similar to that of graph theory but with some important differences in the case of polytopal complexes.
 
 In order to be able to subdivide $P$ into multiple cells, we need to be able to partition its faces into two or more groups $\{F_1, \ldots, F_m\}$ with a common separator $F_0$.
 Moreover, we assume at first that $[P, F_0] = 0$ and $[P, F_i] \neq 0$ for $i \ge 1$.
 We can find separators and subgroups through a procedure analogous to breadth-first search but with adjacency defined by sharing common subfaces.
 
-The boundary matrices at first will have the form
+The initial $n - 1$-boundary matrix will have the form
 \begin{equation}
-    \partial_k = \Big[\begin{matrix}[S, F_0] & [S, F_1] & \cdots & [S, F_m]\end{matrix}\Big],
+    \partial_{n - 1} = \Big[\begin{matrix}[S, F_0] & [S, F_1] & \cdots & [S, F_m]\end{matrix}\Big],
 \end{equation}
-where $S$ denotes the set of all subfaces or $k - 2$-dimensional cells contained in $P$, and
+where $S$ denotes the set of all subfaces or $n - 2$-dimensional cells contained in $P$, and
 \begin{equation}
-    \partial_{k + 1} = \left[\begin{matrix} 0 \\ [F_1, P] \\ \vdots \\ [F_m, P]\end{matrix}\right].
+    \partial_n = \left[\begin{matrix} 0 \\ [F_1, P] \\ \vdots \\ [F_m, P]\end{matrix}\right].
 \end{equation}
 The fundamental equation \eqref{eq:ddzero} then implies that
 \begin{equation}
@@ -567,7 +567,7 @@ The fundamental equation \eqref{eq:ddzero} then implies that
 \end{equation}
 We then make the ansatz that the transformed boundary matrix will have the form
 \begin{equation}
-    \partial_{k + 1}' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
+    \partial_n' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
 \end{equation}
 where the adjacencies $[F_0, P_i]$ need to be solved for.
 Provided that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, the boundary of the new chain will be the same as the old.
@@ -585,12 +585,13 @@ We can obtain a square system by instead opting to solve
 We can compute solutions to integer linear systems by first finding the Hermite normal form of the system matrix \cite{kannan1979polynomial}.
 
 
-% ---------------------
+% =====================
 \section{Demonstration}
 
 As a proof of concept, we developed a software package called \emph{topomesh} which implements the transformations defined above.
 We then implemented several common algorithms in computational geometry using these transformations.
 
+% -------------------------------------
 \subsection{Splitting and convex hulls}
 
 The split transformation is the key computational kernel for computing convex hulls in any dimension.
@@ -619,7 +620,7 @@ def split(D: List[np.ndarray]) -> List[np.ndarray]:
     return E
     \end{minted}
     \caption{Python source code for the split transformation.
-    Line 13 corresponds to equation \eqref{eq:split-k}; lines 17 and 18 correspond to equation \eqref{eq:split-n}.
+    Line 13 corresponds to equation \eqref{eq:cone-partial-k}; lines 17 and 18 correspond to equation \eqref{eq:vertex-split-n}.
     The real version has some additional logic to remove empty cells.}
     \label{fig:split-source-code}
 \end{figure}
@@ -627,13 +628,12 @@ def split(D: List[np.ndarray]) -> List[np.ndarray]:
 We used the split transformation to implement a convex hull algorithm that works in arbitrary dimensions.
 To test the convex hull code, we used (1) random point sets up to dimension 5 and (2) several synthetic input sets with various degeneracies such as coplanarity.
 For geometric predicates, we used interval arithmetic and fall back to exact rational arithmetic if the result interval contains zero.
-\textcolor{red}{Elaborate...}
 
 Our implementation of the convex hull algorithm takes in a function as argument which supplies the procedure for computing the signed volume predicate.
 Computing Delaunay triangulations is equivalent to computing the lower half of a convex hull of the input points lifted to a paraboloid.
 We also implemented a Delaunay triangulation method which reuses our convex hull algorithm by supplying an insphere function instead of the usual signed volume function.
 
-
+% ---------------------------------------------
 \subsection{Constrained Delaunay triangulation}
 
 The split transformation alone is enough to compute convex hulls and unconstrained Delaunay triangulations.
@@ -642,15 +642,15 @@ We implemented a CDT algorithm based on \cite{anglada1997improved}.
 \textcolor{red}{Elaborate...}
 
 
-% ------------------
+% ==================
 \section{Conclusion}
 
 Doubly-connected edge lists have historically been popular for mesh generation because they offer a simple interface for traversing the topology \cite{guibas1985primitives}.
-Here we propose that boundary operators are an ideal representation if the goal is to perform topological transformations.
+Here we propose that boundary operators are a viable choice of representation if the goal is to perform topological transformations.
 This idea has appeared before, for example in the work of DiCarlo and others \cite{dicarlo2007solid}.
 
 Boundary operators are only necessary for representing a small patch of the topology at a time.
-Once the transformed patch is computed, it can be translated back to a set of simplexes.
+Once the transformed patch is computed, it can be translated back to a set of simplices.
 Boundary operators are useful for describing non-simplicial intermediate states of a transformation; they are not space-optimal for describing an entire simplicial complex.
 
 When the objects of study can be represented as linear operators, we can apply linear algebraic reasoning to define transformations and verify that they preserve all of the important invariants.
