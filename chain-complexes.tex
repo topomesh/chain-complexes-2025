@@ -67,8 +67,8 @@ Finally, as a proof-of-concept, we implemented algorithms for computing convex h
 
 \subsection{Polygonal complexes}
 
-The mathematical theory that underlies the rest of the paper is basic algebraic topology.
-An introduction to this subject might start from the definition simplicial or cubical complexes.
+The mathematical theory that underlies the rest of the paper is basic algebraic topology, but some prefatory remarks are in order about why we chose certain abstractions to work with and not others.
+An introduction to algebraic topology might start from the definition simplicial or cubical complexes.
 These structures are advantageous for two reasons.
 First, their combinatorial structure has a clear relation to their geometry.
 For example, the ordering of the vertices of a simplex has to obey the right-hand rule, i.e. the determinant of a certain matrix must be positive.
@@ -76,18 +76,20 @@ We say that the whole complex is positively-oriented if each simplex is.
 Second, the combinatorial structure lends itself in a direct way to the definition of \emph{incidence numbers} between $k$-cells and $k - 1$-cells of the complex.
 The matrices of such incidence numbers then become the representatives of the boundary operators on a chain complex.
 From these boundary operators one can then construct the associated homology groups.
-By contrast, one could instead consider the category of CW complexes, which has certain theoretical and computational advantages and which subsumes the cases of both simplicial and cubical complexes.
+By contrast, one could instead consider the category of CW complexes, which has certain theoretical and computational advantages and which includes both simplicial and cubical complexes.
 But the definition of incidence numbers for CW complexes requires much more sophisticated concepts that do not relate in an obvious way to some combinatorial structure.
 
-Here, we consider the viewpoint of polytopal complexes, which includes the simplicial and cubical cases but is less general than the full CW category.
+Here, we consider \emph{polytopal complexes}, which includes the simplicial and cubical cases but is less general than the full CW category.
 In many applications, we want to end up with a simplicial (or cubical) complex.
 When our data structure can only describe simplicial (resp. cubical) complexes, any transformation has to stay in the right category from start to finish.
-By contrast, the advantage of polytopal complexes is that we can represent non-simplicial intermediate states.
+The advantage of polytopal complexes is that we can explicitly represent non-simplicial intermediate states.
+For example, we might merge several triangles of a mesh into a polygon which we then re-triangulate in a different way.
 With this flexibility comes a cost: some of the definitions are more involved and we have to make some more assumptions from the outset.
 
 A polytopal complex $\Omega$ is a finite collection of \emph{cells} such that, if $\sigma$ and $\tau$ are cells of $\Omega$, then their intersection $\sigma\cap\tau$ is also in $\Omega$.
 Each cell has a dimension and the dimension of $\Omega$ is the highest dimension of any of its cells.
-We moreover assume that, for any cells $\sigma$ of dimension $k$ and $\tau$ of dimension $k - 1$, there is an \emph{incidence number} between them, which we write as $[\sigma, \tau]$, such that
+The $k$-\emph{skeleton} is the set of all $k$-dimensional cells of $\Omega$, which we write as $\text{skel}_k(\Omega)$.
+We moreover assume that, for any $k$-cell $\sigma$ and $k - 1$-cell $\tau$, there is an \emph{incidence number} between them, which we write as $[\sigma, \tau]$, such that
 \begin{equation}
     [\sigma, \tau] = \begin{cases} +1 & \tau\text{ is attached positively in }\sigma \\ -1 & \tau\text{ is attached negatively in }\sigma \\ 0 & \tau\text{ is not in }\sigma\end{cases}.
 \end{equation}
@@ -100,14 +102,16 @@ For cubical complexes, the incidence numbers are instead defined through tensor 
 There is no simple combinatorial way to define the incidence numbers of a polytopal complex and we have to instead assume that they are given from the outset.
 One way to do so is to start with a simplicial or cubical complex and transform it using the operations described below into a more general polytopal complex.
 
+\subsection{Boundary operators}
+
 The main character of our story is not the polytopal complex itself but rather the boundary operators between the chain modules.
 To define what a boundary operator is we first need to describe what spaces it acts on.
-A \emph{chain} $C$ is a formal integer linear combination of $k$-dimensional cells:
+A \emph{chain} $C$ is a formal integer linear combination of $k$-cells:
 \begin{equation}
     C = c_1\sigma_1 + \ldots + c_m\sigma_m
 \end{equation}
 where the $c_i$ are integer coefficients and $\sigma_i$ are $k$-cells.
-We write the space of all $k$-chains on a complex $\Omega$ as $\mathscr{C}^k(\Omega)$ or just $\mathscr{C}^k$ where the underlying CW complex is clear from context.
+We write the space of all $k$-chains on a complex $\Omega$ as $\mathscr{C}^k(\Omega)$ or just $\mathscr{C}^k$ where the underlying space is clear from context.
 
 We can now define the boundary operators.
 The $k$-th boundary operator $\partial_k$ is a mapping from the $k$-chains to $k - 1$-chains:
@@ -116,16 +120,17 @@ The $k$-th boundary operator $\partial_k$ is a mapping from the $k$-chains to $k
 \end{equation}
 Given a $k$-cell $\sigma$, we define the boundary of $\sigma$ as
 \begin{equation}
-    \partial_k\sigma = \sum_{\tau \in \Omega^{k - 1}}[\sigma, \tau]\tau
+    \partial_k\sigma = \sum_{\tau \in \text{skel}_{k - 1}(\Omega)}[\sigma, \tau]\tau
 \end{equation}
 where the sum is over all $k - 1$-dimensional cells $\tau$.
 We then extend the definition of $\partial_k$ to all of $\mathscr C^k$ by $\mathbb{Z}$-linearity.
-The most important fact about boundary operators is that the boundary of a boundary is always equal to zero:
+\textbf{The most important fact about boundary operators is that the boundary of a boundary is always equal to zero:}
 \begin{equation}
     \partial_k\cdot\partial_{k + 1} = 0.
     \label{eq:ddzero}
 \end{equation}
-This equation and its consequences is the starting point of homology theory, but we will not need to use this theory in the following.
+This equation is a consequence of the formal definition of incidence numbers on a CW complex \cite{hatcher2002algebraic}.
+Alternatively, if we choose to define a polytopal complex by its boundary operators, we can take the last equation to be a definition or precondition.
 
 There is one final definition that will clarify a later construction at a critical juncture.
 The definitions above assume that the chain complex terminates at $\mathscr{C}^0$, i.e. integer linear combinations of the vertices or 0-dimensional cells.
