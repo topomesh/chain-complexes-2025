@@ -65,16 +65,42 @@ Finally, as a proof-of-concept, we implemented algorithms for computing convex h
 % --------------
 \section{Theory}
 
-The mathematical theory that underlies the rest of the paper is basic algebraic topology.
-We describe the connectivity of a mesh using the boundary operators on a finite, regular CW complex \cite{hatcher2002algebraic}.
-The intuitive picture of a CW complex is a collection of cells or polygons that are attached together by certain maps.
-The formal definition of a CW complex is inductive in the dimension.
-A 0-dimensional complex $\Omega^0$ is a finite collection of points.
-A finite $n$-dimensional complex consists of (1) an $n - 1$-dimensional complex $\Omega^{n - 1}$, and (2) a finite collection $\{\phi_\alpha^n\}$ of homeomorphisms called \emph{attaching maps} from the unit sphere $S^{n - 1}$ into $\Omega^{n - 1}$.
-The complex $\Omega^n$ is then defined to be the disjoint union of copies of the unit ball, with the boundary of copy $\alpha$ identified with its image under the attaching map $\phi_\alpha^n$ under the quotient topology.
-We will write $\Omega$ without a superscript for the whole complex, and $\Omega^k$ for the collection of all cells of dimension $k$.
+\subsection{Polygonal complexes}
 
-The main character of our story is not the CW complex itself but rather the boundary operators between the chain modules.
+The mathematical theory that underlies the rest of the paper is basic algebraic topology.
+An introduction to this subject might start from the definition simplicial or cubical complexes.
+These structures are advantageous for two reasons.
+First, their combinatorial structure has a clear relation to their geometry.
+For example, the ordering of the vertices of a simplex has to obey the right-hand rule, i.e. the determinant of a certain matrix must be positive.
+We say that the whole complex is positively-oriented if each simplex is.
+Second, the combinatorial structure lends itself in a direct way to the definition of \emph{incidence numbers} between $k$-cells and $k - 1$-cells of the complex.
+The matrices of such incidence numbers then become the representatives of the boundary operators on a chain complex.
+From these boundary operators one can then construct the associated homology groups.
+By contrast, one could instead consider the category of CW complexes, which has certain theoretical and computational advantages and which subsumes the cases of both simplicial and cubical complexes.
+But the definition of incidence numbers for CW complexes requires much more sophisticated concepts that do not relate in an obvious way to some combinatorial structure.
+
+Here, we consider the viewpoint of polytopal complexes, which includes the simplicial and cubical cases but is less general than the full CW category.
+In many applications, we want to end up with a simplicial (or cubical) complex.
+When our data structure can only describe simplicial (resp. cubical) complexes, any transformation has to stay in the right category from start to finish.
+By contrast, the advantage of polytopal complexes is that we can represent non-simplicial intermediate states.
+With this flexibility comes a cost: some of the definitions are more involved and we have to make some more assumptions from the outset.
+
+A polytopal complex $\Omega$ is a finite collection of \emph{cells} such that, if $\sigma$ and $\tau$ are cells of $\Omega$, then their intersection $\sigma\cap\tau$ is also in $\Omega$.
+Each cell has a dimension and the dimension of $\Omega$ is the highest dimension of any of its cells.
+We moreover assume that, for any cells $\sigma$ of dimension $k$ and $\tau$ of dimension $k - 1$, there is an \emph{incidence number} between them, which we write as $[\sigma, \tau]$, such that
+\begin{equation}
+    [\sigma, \tau] = \begin{cases} +1 & \tau\text{ is attached positively in }\sigma \\ -1 & \tau\text{ is attached negatively in }\sigma \\ 0 & \tau\text{ is not in }\sigma\end{cases}.
+\end{equation}
+We will use the idea of incidence in an informal sense but we refer to \cite{hatcher2002algebraic} for the formal definition.
+Our definition of a polytopal complex rules out the possibility of higher-degree attaching, i.e. incidence numbers that take values greater than +1 or less than -1.
+In formal parlance, we are only interested in \emph{regular} complexes.
+
+In the case of simplicial complexes, the incidence numbers can be defined combinatorially through the ordering of vertices.
+For cubical complexes, the incidence numbers are instead defined through tensor product structure.
+There is no simple combinatorial way to define the incidence numbers of a polytopal complex and we have to instead assume that they are given from the outset.
+One way to do so is to start with a simplicial or cubical complex and transform it using the operations described below into a more general polytopal complex.
+
+The main character of our story is not the polytopal complex itself but rather the boundary operators between the chain modules.
 To define what a boundary operator is we first need to describe what spaces it acts on.
 A \emph{chain} $C$ is a formal integer linear combination of $k$-dimensional cells:
 \begin{equation}
@@ -82,23 +108,6 @@ A \emph{chain} $C$ is a formal integer linear combination of $k$-dimensional cel
 \end{equation}
 where the $c_i$ are integer coefficients and $\sigma_i$ are $k$-cells.
 We write the space of all $k$-chains on a complex $\Omega$ as $\mathscr{C}^k(\Omega)$ or just $\mathscr{C}^k$ where the underlying CW complex is clear from context.
-
-To define the boundary operators, we need some idea of orientation or incidence between cells.
-For simplicial complexes, we define this orientation by picking orderings for how the vertices appear in each cell.
-For cubical complexes, orientation is instead defined by deciding which faces are in the ``front'' or ``back'' along each axis.
-There is no simple combinatorial definition of orientation or incidence for general CW complexes.
-Instead, the definition requires some pre-existing notion of topological degree theory.
-Let $\sigma$ be a $k$-cell of a complex and $\tau$ a $k - 1$-cell.
-The quantity we wish to define is the \emph{incidence number} $[\sigma, \tau]$ between the two cells.
-An intuitive definition of the incidence number is
-\begin{equation}
-    [\sigma, \tau] = \begin{cases}0 & \text{$\tau$ is not in $\sigma$} \\ +1 & \text{$\tau$ is positively-oriented in $\sigma$} \\ -1 & \text{$\tau$ is negatively oriented in $\sigma$}\end{cases}
-\end{equation}
-but this informal definition relies on some primitive idea of ``positive'' or ``negative'' orientation.
-The formal definition of the incidence number relies on defining homology groups of spheres, the fact that maps between spaces can be pulled back to maps between homology groups, and the fact that the $n$-th homology group of the sphere $S^n$ is isomorphic to $\mathbb{Z}$.
-Let $\phi$ be the map that attaches $\sigma$ into $\Omega$, and let $\phi^{-1}(\tau)$ be the pre-image of $\tau$ under this map.
-Then the incidence number is defined formally as the topological degree of the attaching map $\phi$.
-For our purposes, however, it is enough to think about incidence numbers using the informal definition.
 
 We can now define the boundary operators.
 The $k$-th boundary operator $\partial_k$ is a mapping from the $k$-chains to $k - 1$-chains:
@@ -144,25 +153,15 @@ This outcome would be undesirable but no other condition on chain complexes expl
 Equation \eqref{eq:0-boundary-matrix} will reappear when we define the split transformation.
 
 
-% -----------------------
-\section{Transformations}
+\subsection{Symmetries}
 
-Here we will describe three different transformations that are easily implementable on the linear-algebraic representation of a mesh.
-A \textbf{merge} operation combines several adjacent cells into one cell.
-A \textbf{vertex split} subdivides a cell into several cells along a new vertex.
-A \textbf{face split} subdivides a cell into several cells along a new facet or collection of facets.
-There are, however, some common principles underlying all transformations.
-
-\subsection{General principles}
-
-\subsubsection{Symmetries}
-
-Before showing genuine transformations that alter the connectivity or structure of a polygonization, it's worth considering what modifications of the boundary matrices leave them unaltered.
-If $A$, $B$ are integer matrices such that the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$, then the matrices
+What kinds of alterations or transformations to a set of boundary matrices preserve the fundamental relation $\partial\partial = 0$?
+If $A$, $B$ are integer matrices and $\{\partial_0, \ldots, \partial_n\}$ are boundary matrices, we define
 \begin{equation}
     \partial_k' = \partial_k\cdot A, \quad \partial_{k + 1}' = B\cdot\partial_{k + 1}
 \end{equation}
-still satisfy $\partial_k'\cdot\partial_{k + 1}' = 0$.
+and ask what conditions we need on $A$ and $B$ in order to guarantee that $\partial_k'\cdot\partial_{k + 1}' = 0$.
+A sufficient condition is that \emph{the image of $\partial_{k + 1}$ is an invariant subspace of $A\cdot B$}.
 
 An important particular case is $A\cdot B = I$.
 For a permutation matrix $P$, the transformation is orthogonal ($P^{-1} = P^*$) and its entries are all integers.
@@ -174,7 +173,7 @@ The invariance of the overall structure to sign flips, as long as they are appli
 
 The more general case where $A\cdot B$ is not equal to the identity matrix but its image is an invariant subspace of $\partial_{k + 1}$ is needed for other transformations, such as merging multiple cells into one or deleting cells.
 
-\subsubsection{Bistellar moves}
+\subsection{Cone spaces}
 
 Bistellar moves are a family of transformations to a cell complex that are known to preserve important invariants or other global properties.
 A bistellar move on a $k$-chain $\mathscr{C}$ first embeds it into the boundary of a $k + 1$-ball $\mathscr{D}$ and then replaces it with the $k$-chain $\mathscr C' = \text{closure}(\partial\mathscr D - \mathscr C)$.
@@ -289,11 +288,11 @@ Equation \eqref{eq:cone-partial-k} has appeared before in the literature on homo
 Its use for practical computations, which we demonstrate below, has not appeared elsewhere as far as we know.
 
 
-\subsection{Specific operations}
+\section{Transformations}
 
 Having written down the explicit formulas \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} for the boundary matrices of a cone, we can then apply them to define transformations of guaranteed validity.
 
-\subsubsection{Merging}
+\subsection{Merging}
 
 A \emph{merge} of a set of $k$-cells replaces them with a single cell (provided that their union is simply-connected).
 Merging is a column operation on the matrix $\partial_k$.
@@ -310,7 +309,7 @@ For merging cells of top dimension $n$, there are no higher-dimensional cells to
 \emph{Edge collapsing}, the key transformation in surface simplification algorithms \cite{gueziec1995surface}, is a merge of two vertices.
 
 
-\subsubsection{Splitting}
+\subsection{Splitting}
 
 A \emph{vertex-split} divides up the union of several polytopes along a vertex.
 The key correctness criteria for this operation are that (1) every newly-created polytope contains the splitting vertex and (2) the boundary of the sum of all polytopes does not change.
@@ -444,7 +443,7 @@ To our knowledge, using these equations for doing real computations is entirely 
 
 The Bowyer-Watson algorithm for Delaunay triangulation and all common algorithms for computing convex hulls only require the split transformation \cite{cheng2013delaunay}.
 
-\subsubsection{Splitting and merging}
+\subsection{Splitting and merging}
 
 Other transformations can be defined by combining a sequence of splits and merges.
 For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges and figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
@@ -537,7 +536,7 @@ Using the boundary operators might make it possible to implement complex transfo
 The split transformation that we derived here is based on computing the topological cone of a space and then removing the base of the cone.
 Multiface retriangulation, as advocated in \cite{misztal2009tetrahedral}, is a transformation of a \emph{suspension}, a related construction in algebraic topology \cite{hatcher2002algebraic}.
 
-\subsubsection{Bisection}
+\subsection{Bisection}
 
 Finally, we consider the problem of how to split a single $k$-cell $P$ into two or more cells along a collection of $(k - 1)$-cells.
 In order to be able to split the top cell, we need to assume a certain connectivity structure between its faces.
