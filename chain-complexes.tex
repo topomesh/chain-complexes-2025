@@ -553,7 +553,7 @@ In order to be able to subdivide $P$ into multiple cells, we need to be able to 
 Moreover, we assume at first that $[P, F_0] = 0$ and $[P, F_i] \neq 0$ for $i \ge 1$.
 We can find separators and subgroups through a procedure analogous to breadth-first search but with adjacency defined by sharing common subfaces.
 
-The initial $n - 1$-boundary matrix will have the form
+The $n - 1$-boundary matrix will have the form
 \begin{equation}
     \partial_{n - 1} = \Big[\begin{matrix}[S, F_0] & [S, F_1] & \cdots & [S, F_m]\end{matrix}\Big],
 \end{equation}
@@ -564,13 +564,17 @@ where $S$ denotes the set of all subfaces or $n - 2$-dimensional cells contained
 The fundamental equation \eqref{eq:ddzero} then implies that
 \begin{equation}
     \sum_i[S, F_i]\cdot[F_i, P] = 0.
+    \label{eq:face-split-ddzero}
 \end{equation}
-We then make the ansatz that the transformed boundary matrix will have the form
+We will not alter the $n - 1$-boundary matrix at all, only the $n$-boundary matrix.
+
+Now we make the ansatz that the transformed $n$-boundary matrix will have one column for each connected component; each column will have one block for the separator $F_0$; and column $k$ will have a non-zero block for the corresponding component $F_k$.
+In all, the new matrix will have the form
 \begin{equation}
     \partial_n' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
 \end{equation}
 where the adjacencies $[F_0, P_i]$ need to be solved for.
-Provided that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, the boundary of the new chain will be the same as the old.
+Provided that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, the boundary of the new polytope will be the same as the old.
 To preserve the fundamental equation $\partial\partial = 0$, we need that
 \begin{equation}
     [S, F_0][F_0, P_i] = -[S, F_i][F_i, P].
@@ -581,8 +585,30 @@ The system is also rectangular, so it may be under- or over-determined depending
 We can obtain a square system by instead opting to solve
 \begin{equation}
     [S, F_0]^*[S, F_0][F_0, P_i] = -[S, F_0]^*[S, F_i][F_i, P].
+    \label{eq:face-split-normal-eqn}
 \end{equation}
 We can compute solutions to integer linear systems by first finding the Hermite normal form of the system matrix \cite{kannan1979polynomial}.
+Let $[S, F_0]^+$ denote the pseudo-inverse of this system or the matrix $\{[S, F_0]^*[S, F_0]\}^{-1}[S, F_0]$ if the system is solvable.
+Then
+\begin{align}
+    & \sum_i[F_0, P_i]\mathbbm{1} = \nonumber\\
+    & \quad\quad -[S, F_0]^+\sum_i[S, F_i][F_i, P]
+\end{align}
+which equals zero by equation \eqref{eq:face-split-ddzero}, so indeed the new polytopes have the same boundary as the old.
+
+We can also look at this transformation as a bistellar move.
+Both the old polytope and the new polytopes are the common boundary of the $n + 1$-polytope with boundary matrices
+\begin{equation}
+    \partial_n' = \left[\begin{matrix}0 & [F_0, P_1] & \cdots & [F_0, P_m] \\ -[F_1, P] & +[F_1, P] & & \\ & & \ddots & \\ -[F_m, P] & & & +[F_m, P]\end{matrix}\right]
+\end{equation}
+and
+\begin{equation}
+    \partial_{n + 1}' = \mathbbm{1}.
+\end{equation}
+We then remove the $n + 1$-dimensional cell and the original $n$-cells.
+
+Finally, observe that the size of the linear system \eqref{eq:face-split-normal-eqn} is equal to the number of faces of the separator $F_0$.
+When there is only one face, the linear system reduces to a scalar equation and questions about solvability reduce to divisibility.
 
 
 % =====================
