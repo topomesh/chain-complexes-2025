@@ -284,6 +284,7 @@ Finally, we can write down a formula for the boundary matrices of the \emph{susp
 and for the top cells
 \begin{equation}
     \partial_{n + 1}' = (-1)^n\left[\begin{matrix}-I & +I \\ +\partial_n & 0 \\ 0 & -\partial_n\end{matrix}\right].
+    \label{eq:suspension-partial-n+1}
 \end{equation}
 Suspensions will appear again when we consider 2-3 flips of tetrahedra and multi-face retriangulation.
 
@@ -446,11 +447,125 @@ The Bowyer-Watson algorithm for computing Delaunay triangulations and all common
     \label{fig:split-transformation}
 \end{figure}
 
-% --------------------------------
-\subsection{Splitting and merging}
+% -------------------------
+\subsection{Face-splitting}
 
-Other transformations can be defined by combining a sequence of splits and merges.
-For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges and figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
+A \emph{face-split} divides a polytope into several cells along a collection of splitting faces.
+We assume that the initial polytope is not incident upon the splitting faces.
+The correctness criteria for this operation are that (1) each new polytope is incident on the splitting faces and (2) the boundary of the sum of all polytopes does not change.
+In order to be able to split the top cell, we need to assume a certain connectivity structure between its faces.
+A $k$-\emph{path} in $\Omega$ is a collection $\{f_0, s_0, f_1, s_1, \ldots, f_{m - 1}, s_{m - 1}, f_m\}$ such that $s_i$ is a common sub-face of both $f_i$ and $f_{i + 1}$ for each $i$.
+Given two collections of faces $F_1$, $F_2$, we say that a third collection of faces $F$ is a \emph{separator} for $F_1$, $F_2$ if any path from a cell $f_1$ in $F_1$ to a cell $f_2$ in $F_2$ must include some cell $f$ in $F$.
+The definition is similar to that of graph theory but with some important differences in the case of polytopal complexes.
+
+In order to be able to subdivide $P$ into multiple cells, we need to be able to partition its faces into two or more groups $\{F_1, \ldots, F_m\}$ with a common separator $F_0$.
+Moreover, we assume at first that $[P, F_0] = 0$ and $[P, F_i] \neq 0$ for $i \ge 1$.
+We can find separators and subgroups through a procedure analogous to breadth-first search but with adjacency defined by sharing common subfaces.
+
+The $n - 1$-boundary matrix will have the form
+\begin{equation}
+    \partial_{n - 1} = \Big[\begin{matrix}[S, F_0] & [S, F_1] & \cdots & [S, F_m]\end{matrix}\Big],
+\end{equation}
+where $S$ denotes the set of all subfaces or $n - 2$-dimensional cells contained in $P$, and
+\begin{equation}
+    \partial_n = \left[\begin{matrix} 0 \\ [F_1, P] \\ \vdots \\ [F_m, P]\end{matrix}\right].
+\end{equation}
+The fundamental equation \eqref{eq:ddzero} then implies that
+\begin{equation}
+    \sum_i[S, F_i]\cdot[F_i, P] = 0.
+    \label{eq:face-split-ddzero}
+\end{equation}
+We will not alter the $n - 1$-boundary matrix at all, only the $n$-boundary matrix.
+
+Now we make the ansatz that the transformed $n$-boundary matrix will have one column for each connected component; each column will have one block for the separator $F_0$; and column $k$ will have a non-zero block for the corresponding component $F_k$.
+In all, the new matrix will have the form
+\begin{equation}
+    \partial_n' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
+\end{equation}
+where the adjacencies $[F_0, P_i]$ need to be solved for.
+Provided that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, the boundary of the new polytope will be the same as the old.
+To preserve the fundamental equation $\partial\partial = 0$, we need that
+\begin{equation}
+    [S, F_0][F_0, P_i] = -[S, F_i][F_i, P].
+\end{equation}
+We can then attempt to find a solution of this collection of linear systems of equations.
+The existence of a solution is not guaranteed a priori, but if we can find one then it defines a valid subdivision of the original cell.
+The system is also rectangular, so it may be under- or over-determined depending on the number of faces and subfaces.
+We can obtain a square system by instead opting to solve
+\begin{equation}
+    [S, F_0]^*[S, F_0][F_0, P_i] = -[S, F_0]^*[S, F_i][F_i, P].
+    \label{eq:face-split-normal-eqn}
+\end{equation}
+We can compute solutions to integer linear systems by first finding the Hermite normal form of the system matrix \cite{kannan1979polynomial}.
+Let $[S, F_0]^+$ denote the pseudo-inverse of this system or the matrix $\{[S, F_0]^*[S, F_0]\}^{-1}[S, F_0]$ if the system is solvable.
+Then
+\begin{align}
+    & \sum_i[F_0, P_i]\mathbbm{1} = \nonumber\\
+    & \quad\quad -[S, F_0]^+\sum_i[S, F_i][F_i, P]
+\end{align}
+which equals zero by equation \eqref{eq:face-split-ddzero}, so indeed the new polytopes have the same boundary as the old.
+
+We can also look at this transformation as a bistellar move.
+Both the old polytope and the new polytopes are the common boundary of the $n + 1$-polytope with boundary matrices
+\begin{equation}
+    \partial_n' = \left[\begin{matrix}0 & [F_0, P_1] & \cdots & [F_0, P_m] \\ -[F_1, P] & +[F_1, P] & & \\ & & \ddots & \\ -[F_m, P] & & & +[F_m, P]\end{matrix}\right]
+\end{equation}
+and
+\begin{equation}
+    \partial_{n + 1}' = \mathbbm{1}.
+\end{equation}
+We then remove the $n + 1$-dimensional cell and the original $n$-cells.
+
+Finally, observe that the size of the linear system \eqref{eq:face-split-normal-eqn} is equal to the number of faces of the separator $F_0$.
+When there is only one face, the linear system reduces to a scalar equation and questions about solvability reduce to divisibility.
+
+% --------------------------------------
+\subsection{Tetrahedral mesh operations}
+
+The simplest topological transformations used in tetrahedral mesh improvement are 2-3, 3-2, and 4-4 face flips \cite{cheng2013delaunay}.
+These transformations work on a relatively small number of tetrahedra at a time.
+Several publications have argued that two families of transformations, edge removal and multi-face removal, give superior results for increasing common mesh quality measures \cite{shewchuk2002two, klingner2008aggressive}.
+A third transformation, multi-face retriangulation, can be written as a composition of multi-face removal followed by edge removal in order to retriangulate a polygon \cite{misztal2009tetrahedral}.
+These transformations operate on many more tetrahedra at a time, but are, according to an author of a popular mesh generator, ``particularly tedious to implement'' \cite{marot2020reviving}.
+Here we show how to implement these transformations on the linear algebraic representation of the mesh.
+
+Both transformations operate on tetrahedra that are assumed to have special structure.
+The starting mesh for multi-face removal is assumed to consist of a set of triangles that are sandwiched between a pair of vertices, to use the terminology of \cite{shewchuk2002two}.
+The result is a set of tetrahedra that all meet at a common central edge (the toothpick?).
+Edge removal goes in the opposite direction.
+In either case, we can observe that the sandwich scenario is really the topological suspension of the filling, i.e. the join with two vertices.
+We will exhibit both of these states as parts of the boundary of a higher-dimensional polytope.
+
+Let $\{\partial_0, \partial_1, \partial_2\}$ be the boundary matrices of the filling faces.
+We will take the cone of this polytopal complex twice, which will lift it into 4D.
+The boundary matrices of the first cone are
+\begin{equation}
+    \partial_1' = \left[\begin{matrix}\partial_1 & I \\ & -\mathbbm{1}^*\end{matrix}\right],
+    \;\partial_2' = \left[\begin{matrix}\partial_2 & I \\ & -\partial_1\end{matrix}\right],
+    \;\partial_3' = \left[\begin{matrix}-I \\ \partial_2\end{matrix}\right]
+\end{equation}
+and the boundary matrices of the iterated cone are
+\begin{align}
+    \partial_1'' & = \left[\begin{matrix}\partial_1 & I & I & \\ & -\mathbbm{1}^* & & I \\ & & -\mathbbm{1}^* & \mathbbm{1}^*\end{matrix}\right], \label{eq:double-cone-partial1} \\
+    \partial_2'' & = \left[\begin{matrix}\partial_2 & I & I & \\ & -\partial_1 & & I \\ & & -\partial_1 & -I \\ & & & -\mathbbm{1}^*\end{matrix}\right],\label{eq:double-cone-partial2} \\
+        \partial_3'' & = \left[\begin{matrix}\textcolor{orange}{-I} & \textcolor{orange}{+I} & \\ \textcolor{orange}{+\partial_2} & & \textcolor{teal}{+I} \\ & \textcolor{orange}{-\partial_2} & \textcolor{teal}{-I} \\ & & \textcolor{teal}{\partial_1}\end{matrix}\right],\label{eq:double-cone-partial3} \\
+    \partial_4'' & = \left[\begin{matrix} I \\ I \\ -\partial_2\end{matrix}\right].\label{eq:double-cone-partial4}
+\end{align}
+Notice the first two columns of $\partial_3''$, highlighted in orange -- these are identical to equation \eqref{eq:suspension-partial-n+1} for the top boundary matrix of a suspension.
+In other words, the starting state for multi-face removal and the ending state of edge removal are both isomorphic to a sub-complex of the iterated cone.
+The complement of these tetrahedra, highlighted in teal, is the starting state of edge removal and the final state of multi-face removal.
+
+The fact that the end states of either operation are both complementary components of the boundary of a higher-dimensional polytope suggests an implementation strategy.
+First, find an isomorphism of the starting tetrahedra with a subcomplex of the iterated cone.
+Then remove the starting tetrahedra; the remainder are the desired final state.
+If we take the original 2D filling faces to be a single triangle, then the previous equations give an alternative implementation of 2 $\leftrightarrow$ face flips.
+
+% -----------------------
+\subsection{Combinations}
+
+More transformations can be defined by combining a sequence of any of the above.
+For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges.
+Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
 (We've shown an initial merge step for illustrative purposes, but this merge is actually part of the subsequent split.)
 
 \begin{figure}[h]
@@ -532,83 +647,6 @@ For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by 
     \label{fig:2-3-flip}
 \end{figure}
 
-\textcolor{red}{This text is copied over from the short paper but it needs revisiting.
-The current paper is supposed to do or at least enable multi-face retriangulation so we need to be less speculative and prove the concept.}
-A few papers have proposed using multi-cell transformations for 3D mesh improvement \cite{klingner2008aggressive}.
-Multi-cell transformations are more complex than 2-3 or 3-2 flips, but \cite{misztal2009tetrahedral} showed that they can be implemented as a sequence of flips.
-Using the boundary operators might make it possible to implement complex transformations with less effort.
-The split transformation that we derived here is based on computing the topological cone of a space and then removing the base of the cone.
-Multiface retriangulation, as advocated in \cite{misztal2009tetrahedral}, is a transformation of a \emph{suspension}, a related construction in algebraic topology \cite{hatcher2002algebraic}.
-
-% -------------------------
-\subsection{Face-splitting}
-
-Finally, we consider the problem of how to split a single $n$-cell $P$ into two or more cells along a collection of $(n - 1)$-cells.
-In order to be able to split the top cell, we need to assume a certain connectivity structure between its faces.
-A $k$-\emph{path} in $\Omega$ is a collection $\{f_0, s_0, f_1, s_1, \ldots, f_{m - 1}, s_{m - 1}, f_m\}$ such that $s_i$ is a common sub-face of both $f_i$ and $f_{i + 1}$ for each $i$.
-Given two collections of faces $F_1$, $F_2$, we say that a third collection of faces $F$ is a \emph{separator} for $F_1$, $F_2$ if any path from a cell $f_1$ in $F_1$ to a cell $f_2$ in $F_2$ must include some cell $f$ in $F$.
-The definition is similar to that of graph theory but with some important differences in the case of polytopal complexes.
-
-In order to be able to subdivide $P$ into multiple cells, we need to be able to partition its faces into two or more groups $\{F_1, \ldots, F_m\}$ with a common separator $F_0$.
-Moreover, we assume at first that $[P, F_0] = 0$ and $[P, F_i] \neq 0$ for $i \ge 1$.
-We can find separators and subgroups through a procedure analogous to breadth-first search but with adjacency defined by sharing common subfaces.
-
-The $n - 1$-boundary matrix will have the form
-\begin{equation}
-    \partial_{n - 1} = \Big[\begin{matrix}[S, F_0] & [S, F_1] & \cdots & [S, F_m]\end{matrix}\Big],
-\end{equation}
-where $S$ denotes the set of all subfaces or $n - 2$-dimensional cells contained in $P$, and
-\begin{equation}
-    \partial_n = \left[\begin{matrix} 0 \\ [F_1, P] \\ \vdots \\ [F_m, P]\end{matrix}\right].
-\end{equation}
-The fundamental equation \eqref{eq:ddzero} then implies that
-\begin{equation}
-    \sum_i[S, F_i]\cdot[F_i, P] = 0.
-    \label{eq:face-split-ddzero}
-\end{equation}
-We will not alter the $n - 1$-boundary matrix at all, only the $n$-boundary matrix.
-
-Now we make the ansatz that the transformed $n$-boundary matrix will have one column for each connected component; each column will have one block for the separator $F_0$; and column $k$ will have a non-zero block for the corresponding component $F_k$.
-In all, the new matrix will have the form
-\begin{equation}
-    \partial_n' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
-\end{equation}
-where the adjacencies $[F_0, P_i]$ need to be solved for.
-Provided that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, the boundary of the new polytope will be the same as the old.
-To preserve the fundamental equation $\partial\partial = 0$, we need that
-\begin{equation}
-    [S, F_0][F_0, P_i] = -[S, F_i][F_i, P].
-\end{equation}
-We can then attempt to find a solution of this collection of linear systems of equations.
-The existence of a solution is not guaranteed a priori, but if we can find one then it defines a valid subdivision of the original cell.
-The system is also rectangular, so it may be under- or over-determined depending on the number of faces and subfaces.
-We can obtain a square system by instead opting to solve
-\begin{equation}
-    [S, F_0]^*[S, F_0][F_0, P_i] = -[S, F_0]^*[S, F_i][F_i, P].
-    \label{eq:face-split-normal-eqn}
-\end{equation}
-We can compute solutions to integer linear systems by first finding the Hermite normal form of the system matrix \cite{kannan1979polynomial}.
-Let $[S, F_0]^+$ denote the pseudo-inverse of this system or the matrix $\{[S, F_0]^*[S, F_0]\}^{-1}[S, F_0]$ if the system is solvable.
-Then
-\begin{align}
-    & \sum_i[F_0, P_i]\mathbbm{1} = \nonumber\\
-    & \quad\quad -[S, F_0]^+\sum_i[S, F_i][F_i, P]
-\end{align}
-which equals zero by equation \eqref{eq:face-split-ddzero}, so indeed the new polytopes have the same boundary as the old.
-
-We can also look at this transformation as a bistellar move.
-Both the old polytope and the new polytopes are the common boundary of the $n + 1$-polytope with boundary matrices
-\begin{equation}
-    \partial_n' = \left[\begin{matrix}0 & [F_0, P_1] & \cdots & [F_0, P_m] \\ -[F_1, P] & +[F_1, P] & & \\ & & \ddots & \\ -[F_m, P] & & & +[F_m, P]\end{matrix}\right]
-\end{equation}
-and
-\begin{equation}
-    \partial_{n + 1}' = \mathbbm{1}.
-\end{equation}
-We then remove the $n + 1$-dimensional cell and the original $n$-cells.
-
-Finally, observe that the size of the linear system \eqref{eq:face-split-normal-eqn} is equal to the number of faces of the separator $F_0$.
-When there is only one face, the linear system reduces to a scalar equation and questions about solvability reduce to divisibility.
 
 
 % =====================
