@@ -548,7 +548,7 @@ The boundary matrices of the first cone are
 \end{equation}
 and the boundary matrices of the iterated cone are
 \begin{align}
-    \partial_1'' & = \left[\begin{matrix}\partial_1 & I & I & \\ & -\mathbbm{1}^* & & I \\ & & -\mathbbm{1}^* & \mathbbm{1}^*\end{matrix}\right], \label{eq:double-cone-partial1} \\
+    \partial_1'' & = \left[\begin{matrix}\partial_1 & I & I & \\ & -\mathbbm{1}^* & &\textcolor{purple}{+1} \\ & & -\mathbbm{1}^* & \textcolor{purple}{-1}\end{matrix}\right], \label{eq:double-cone-partial1} \\
     \partial_2'' & = \left[\begin{matrix}\partial_2 & I & I & \\ & -\partial_1 & & I \\ & & -\partial_1 & -I \\ & & & -\mathbbm{1}^*\end{matrix}\right],\label{eq:double-cone-partial2} \\
         \partial_3'' & = \left[\begin{matrix}\textcolor{orange}{-I} & \textcolor{orange}{+I} & \\ \textcolor{orange}{+\partial_2} & & \textcolor{teal}{+I} \\ & \textcolor{orange}{-\partial_2} & \textcolor{teal}{-I} \\ & & \textcolor{teal}{\partial_1}\end{matrix}\right],\label{eq:double-cone-partial3} \\
     \partial_4'' & = \left[\begin{matrix} I \\ I \\ -\partial_2\end{matrix}\right].\label{eq:double-cone-partial4}
@@ -556,17 +556,18 @@ and the boundary matrices of the iterated cone are
 Notice the first two columns of $\partial_3''$, highlighted in orange -- these are identical to equation \eqref{eq:suspension-partial-n+1} for the top boundary matrix of a suspension.
 In other words, the starting state for multi-face removal and the ending state of edge removal are both isomorphic to a sub-complex of the iterated cone.
 The complement of these tetrahedra, highlighted in teal, is the starting state of edge removal and the final state of multi-face removal.
+The column of $\partial_1''$ corresponding to the edge that joins the apices in the starting state of edge removal / ending state of multi-face removal is highlighted in purple.
 
 The fact that the end states of either operation are both complementary components of the boundary of a higher-dimensional polytope suggests an implementation strategy.
 First, find an isomorphism of the starting tetrahedra with a subcomplex of the iterated cone.
 Then remove the starting tetrahedra; the remainder are the desired final state.
-If we take the original 2D filling faces to be a single triangle, then the previous equations give an alternative implementation of 2 $\leftrightarrow$ face flips.
+If we take the original 2D filling faces to be a single triangle, then the previous equations give an alternative implementation of 2 $\leftrightarrow$ 3 face flips.
 
 % -----------------------
 \subsection{Combinations}
 
 More transformations can be defined by combining a sequence of any of the above.
-For example, figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges.
+For example, Figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges.
 Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
 (We've shown an initial merge step for illustrative purposes, but this merge is actually part of the subsequent split.)
 
@@ -599,16 +600,18 @@ As a proof of concept, we developed a software package called \emph{topomesh} wh
 We then implemented several common algorithms in computational geometry using these transformations.
 
 % -------------------------------------
-\subsection{Splitting and convex hulls}
+\subsection{Vertex splitting and convex hulls}
 
-The split transformation is the key computational kernel for computing convex hulls in any dimension.
-The source code for the split transformation is shown in figure \ref{fig:split-source-code}.
+The vertex-split transformation is the key computational kernel for computing convex hulls in any dimension.
+The source code for the vertex-split transformation is shown in figure \ref{fig:split-source-code}.
 \begin{figure}
     \begin{minted}[fontsize=\footnotesize,linenos]{python}
 import numpy as np
 from typing import List
 
-def split(D: List[np.ndarray]) -> List[np.ndarray]:
+Topology = List[np.ndarray]
+
+def vertex_split(D: Topology) -> Topology:
     # Create the boundary matrices for 1 <= k < n
     n_vertices = D[0].shape[1]
     E = [np.ones((1, n_vertices + 1), int)]
@@ -627,14 +630,14 @@ def split(D: List[np.ndarray]) -> List[np.ndarray]:
     return E
     \end{minted}
     \caption{Python source code for the split transformation.
-    Line 13 corresponds to equation \eqref{eq:cone-partial-k}; lines 17 and 18 correspond to equation \eqref{eq:vertex-split-n}.
+    Line 15 corresponds to equation \eqref{eq:cone-partial-k}; lines 19-20 correspond to equation \eqref{eq:vertex-split-n}.
     The real version has some additional logic to remove empty cells.}
     \label{fig:split-source-code}
 \end{figure}
 
 We used the split transformation to implement a convex hull algorithm that works in arbitrary dimensions.
 To test the convex hull code, we used (1) random point sets up to dimension 5 and (2) several synthetic input sets with various degeneracies such as coplanarity.
-For geometric predicates, we used interval arithmetic and fall back to exact rational arithmetic if the result interval contains zero.
+For geometric predicates, we first compute the determinant using interval arithmetic; if the result interval contains zero, we try again with exact rationals.
 
 Our implementation of the convex hull algorithm takes in a function as argument which supplies the procedure for computing the signed volume predicate.
 Computing Delaunay triangulations is equivalent to computing the lower half of a convex hull of the input points lifted to a paraboloid.
