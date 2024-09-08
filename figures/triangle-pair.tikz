@@ -1,0 +1,23 @@
+\begin{tikzpicture}[scale=0.75]
+    \coordinate (p1) at (1, 0){};
+    \coordinate (p2) at (3, 0){};
+    \coordinate (p3) at (2, 2){};
+    \coordinate (p4) at (0, 2){};
+
+    \draw[fill=blue!35] (p1) -- (p2) -- (p3) -- cycle;
+    \draw[fill=red!35] (p1) -- (p3) -- (p4) -- cycle;
+    \begin{scope}[
+        very thick,
+        decoration={markings, mark=at position 0.5 with {\arrow{>}}}
+    ]
+        \draw[postaction={decorate}] (p1) -- (p2);
+        \draw[postaction={decorate}] (p2) -- (p3);
+        \draw[postaction={decorate}] (p3) -- (p4);
+        \draw[postaction={decorate}] (p4) -- (p1);
+        \draw[postaction={decorate}] (p1) -- (p3);
+    \end{scope}
+    \foreach \p in {p1, p2, p3, p4} {
+        \filldraw (\p) circle (3pt);
+    }
+\end{tikzpicture}
+

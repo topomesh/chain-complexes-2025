@@ -89,6 +89,40 @@ This informal definition is enough for the constructions that follow.
 For example, if $e = \langle v_0, v_1\rangle$ is an edge connecting the vertices $v_0$ and $v_1$, then $[e, v_0] = -1$ and $[e, v_1] = +1$.
 Likewise, if we consider a positively-oriented triangle $t = \langle v_0, v_1, v_2\rangle$, then the incidence number of $t$ to the edges $\langle v_0, v_1\rangle$, $\langle v_1, v_2\rangle$, and $\langle v_2, v_0\rangle$ are all positive.
 
+% TODO: Add labels to the figure and the boundary matrices, see
+% https://tex.stackexchange.com/a/59732
+\begin{figure}[t]
+    \begin{minipage}{0.48\linewidth}
+        \begin{center}
+            \input{figures/triangle-pair.tikz}
+        \end{center}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\linewidth}
+        {\small
+            \begin{equation*}
+                \partial_1 = \left[\begin{smallmatrix}
+                    - &   & + & - &   \\
+                    + & - &   &   & + \\
+                      & + & - &   &   \\
+                      &   &   & + & -
+                \end{smallmatrix}\right]
+            \end{equation*}
+            \begin{equation*}
+                \partial_2 = \left[\begin{smallmatrix}
+                    \textcolor{red!65}+ & \textcolor{blue!65}- \\
+                    \textcolor{red!65}+ &   \\
+                    \textcolor{red!65}+ &   \\
+                      & \textcolor{blue!65}+ \\
+                      & \textcolor{blue!65}+
+                \end{smallmatrix}\right]
+            \end{equation*}
+        }
+    \end{minipage}
+    \caption{Pair of adjacent triangles (left) and their boundary matrices (right).}
+    \label{fig:two-triangle-chain-complex}
+\end{figure}
+
 Let $n_k$ be the number of cells of $\Omega$ of dimension $k$.
 Suppose additionally that we have numbered all of the $k - 1$-cells as $\{\tau_i\}_{i = 1}^{n_{k - 1}}$ and the $k$-cells as $\{\sigma_j\}_{j = 1}^{n_k}$.
 The $k$-th boundary matrix $\partial_k$ is an integer matrix of size $n_{k - 1} \times n_k$.
@@ -98,15 +132,17 @@ The $i, j$ entry of this matrix is
 \end{equation}
 These operators act on certain spaces of \emph{chains} but the theory behind this will not be important for the following.
 By reading off columns of each boundary matrix, we can quickly determine which $k - 1$-cells are faces of a given $k$-cell and how they are attached.
-To continue with the example above, we might say that if $e = \langle v_0, v_1$ is an edge, then $\partial e = +v_1 - v_0$.
+To continue with the example above, we might say that if $e = \langle v_0, v_1\rangle$ is an edge, then $\partial e = +v_1 - v_0$.
 Likewise, if $t = \langle v_0, v_1, v_2\rangle$ is a triangle, then $\partial t = \langle v_0, v_1\rangle + \langle v_1, v_2\rangle + \langle v_2, v_0\rangle$.
+Figure \ref{fig:two-triangle-chain-complex} shows the boundary matrices for two adjacent triangles.
 
 \textbf{The most important fact about boundary operators is that the boundary of a boundary is always equal to zero:}
 \begin{equation}
     \partial_k\cdot\partial_{k + 1} = 0.
     \label{eq:ddzero}
 \end{equation}
-For formal proofs of this relation, see \cite{hatcher2002algebraic} for the simplicial case and \cite{massey2019basic} for the cubical and general cases.
+This relation has to be proved in each case from certain basic facts about incidence numbers.
+For formal proofs, see \cite{hatcher2002algebraic} for the simplicial case and \cite{massey2019basic} for the cubical and general cases.
 
 There is one final definition that will clarify a later construction at a critical juncture.
 The definitions above assume that the mesh terminates at the points or 0-dimensional cells.
@@ -195,7 +231,15 @@ A bistellar move of a set of cells of a mesh first embeds them into the boundary
 These transformations are known to preserve important invariants and other global properties.
 The fact that the new cells have the same boundary as the old ensures that the the fundamental relation $\partial\partial = 0$ is preserved.
 But how we polygonize the higher-dimensional ball is a matter of choice.
-The constructions that follow are all based on a particular polygonization obtained by forming the topological \emph{cone}, which we describe below.
+The constructions that follow are all based on a particular polygonization called the topological \emph{cone}.
+
+\begin{figure}[t]
+    \begin{center}
+        \includegraphics[width=0.9\linewidth]{figures/cone.pdf}
+    \end{center}
+    \caption{A 2D footprint polygon (left) and its topological cone (right).}
+    \label{fig:cone}
+\end{figure}
 
 To describe what a topological cone is, it is helpful to first describe the concept of a \emph{join}.
 The join of two subsets $C$ and $C'$ of Euclidean space is the set
@@ -203,11 +247,12 @@ The join of two subsets $C$ and $C'$ of Euclidean space is the set
     C * C' = \{\lambda\cdot c + (1 - \lambda)c' : c \in C, c' \in C', \lambda \in [0, 1]\}.
 \end{equation}
 Intuitively, the join of two spaces consists of the set of all lines between them.
-If $C$ and $C$' are, respectively, $m$- and $n$-dimensional submanifolds, then $C * C'$ is $m + n + 1$-dimensional.
+If $C$ and $C'$ are, respectively, $m$- and $n$-dimensional submanifolds, then $C * C'$ is $m + n + 1$-dimensional.
 An important fact for the transformations that we'll define is that the join of an $m$-simplex and an $n$-simplex is an $m + n + 1$-simplex.
 
 The topological cone of a space $\Omega$, which we will write as $\text{cone}(\Omega)$, is the join with a single point.
 We will refer to this added point as the \emph{apex}.
+An illustration is shown in Figure \ref{fig:cone}.
 Suppose that we have a set of boundary matrices $\{\partial_0, \ldots, \partial_n\}$ for a space $\Omega$.
 \textbf{We can express the boundary matrices $\{\partial_0', \ldots, \partial_{n + 1}'\}$ for $\text{cone}(\Omega)$ in terms of the boundary matrices of the original space.}
 This construction underlies both the vertex- and face-split transformations described below.
@@ -362,50 +407,7 @@ The Bowyer-Watson algorithm for computing Delaunay triangulations and all common
 
 \begin{figure}[h]
     \begin{center}
-        \begin{tikzpicture}[scale=0.75]
-            \newcommand*{\defcoords}{
-                \coordinate (p0) at (1.5, 1){};
-                \coordinate (p1) at (1, 0){};
-                \coordinate (p2) at (3, 0){};
-                \coordinate (p3) at (2, 2){};
-                \coordinate (p4) at (0, 2){};
-            }
-
-            \begin{scope}[
-                very thick,
-                decoration={markings, mark=at position 0.5 with {\arrow{>}}}
-            ]
-                \defcoords
-                \draw[postaction={decorate}] (p1) -- (p2);
-                \draw[postaction={decorate}] (p2) -- (p3);
-                \draw[postaction={decorate}] (p3) -- (p4);
-                \draw[postaction={decorate}] (p4) -- (p1);
-
-                \foreach \p in {p1, p2, p3, p4} {
-                    \filldraw (\p) circle (2pt);
-                }
-            \end{scope}
-
-            \begin{scope}[
-                very thick,
-                shift={(4, 0)},
-                decoration={markings, mark=at position 0.5 with {\arrow{>}}}
-            ]
-                \defcoords
-                \draw[postaction={decorate}] (p1) -- (p2);
-                \draw[postaction={decorate}] (p2) -- (p3);
-                \draw[postaction={decorate}] (p3) -- (p4);
-                \draw[postaction={decorate}] (p4) -- (p1);
-                \draw[postaction={decorate}] (p0) -- (p2);
-                \draw[postaction={decorate}] (p0) -- (p3);
-                \draw[postaction={decorate}] (p0) -- (p4);
-                \draw[postaction={decorate}] (p0) -- (p1);
-
-                \foreach \p in {p0, p1, p2, p3, p4} {
-                    \filldraw (\p) circle (2pt);
-                }
-            \end{scope}
-        \end{tikzpicture}
+        \input{figures/split-quad.tikz}
     \end{center}
 
     \begin{equation*}
@@ -572,66 +574,7 @@ Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
     \tikzset{ec/.style={every coordinate/.try}}
 
     \begin{center}
-    \begin{tikzpicture}[scale=0.4]
-        \coordinate (p0) at (1.5, 1){};
-        \coordinate (p1) at (1, 0){};
-        \coordinate (p2) at (3, 0){};
-        \coordinate (p3) at (2, 2){};
-        \coordinate (p4) at (0, 2){};
-
-        \begin{scope}[very thick]
-            \draw (p1) -- (p2) -- (p4) -- cycle;
-            \draw (p4) -- (p3) -- (p2) -- cycle;
-
-            \foreach \p in {p1, p2, p3, p4} {
-                \filldraw (\p) circle (3pt);
-            }
-        \end{scope}
-
-        \begin{scope}[very thick, every coordinate/.style={shift={(3.5,0)}}]
-            \draw ([ec]p1) -- ([ec]p2) -- ([ec]p3) -- ([ec]p4) -- cycle;
-
-            \foreach \p in {p1, p2, p3, p4} {
-                \filldraw ([ec]\p) circle (3pt);
-            }
-        \end{scope}
-
-        \begin{scope}[very thick, every coordinate/.style={shift={(7,0)}}]
-            \draw ([ec]p0) -- ([ec]p1) -- ([ec]p2) -- cycle;
-            \draw ([ec]p0) -- ([ec]p2) -- ([ec]p3) -- cycle;
-            \draw ([ec]p0) -- ([ec]p3) -- ([ec]p4) -- cycle;
-            \draw ([ec]p0) -- ([ec]p4) -- ([ec]p1) -- cycle;
-
-            \foreach \p in {p0, p1, p2, p3, p4} {
-                \filldraw ([ec]\p) circle (3pt);
-            }
-        \end{scope}
-
-        \begin{scope}[very thick, every coordinate/.style={shift={(10.5,0)}}]
-            \draw ([ec]p1) -- ([ec]p2) -- ([ec]p3) -- cycle;
-            \draw ([ec]p3) -- ([ec]p4) -- ([ec]p1) -- cycle;
-
-            \foreach \p in {p0, p1, p2, p3, p4} {
-                \filldraw ([ec]\p) circle (3pt);
-            }
-        \end{scope}
-
-        \begin{scope}[very thick, every coordinate/.style={shift={(14,0)}}]
-            \draw ([ec]p1) -- ([ec]p2) -- ([ec]p3) -- cycle;
-            \draw ([ec]p3) -- ([ec]p4) -- ([ec]p1) -- cycle;
-
-            \foreach \p in {p1, p2, p3, p4} {
-                \filldraw ([ec]\p) circle (3pt);
-            }
-        \end{scope}
-
-        \begin{scope}[very thick]
-            \draw[->] (2, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below, align=center] {merge\\triangles};
-            \draw[->] (5.5, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below] {split};
-            \draw[->] (9.0, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below, align=center] {merge\\triangles};
-            \draw[->] (12.5, -0.2) arc[start angle=180, end angle=360, radius=1.5] node[midway, below, align=center] {merge\\edges};
-        \end{scope}
-    \end{tikzpicture}
+        \input{figures/flip-triangles.tikz}
     \end{center}
     \caption{A 2-2 flip, implemented as a sequence of merges and splits.
     The vertex added by splitting the quadrilateral is deleted when the two edges are merged in the final transformation.}

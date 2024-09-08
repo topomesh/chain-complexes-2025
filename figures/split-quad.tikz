@@ -1,0 +1,45 @@
+\begin{tikzpicture}[scale=0.75]
+    \newcommand*{\defcoords}{
+        \coordinate (p0) at (1.5, 1){};
+        \coordinate (p1) at (1, 0){};
+        \coordinate (p2) at (3, 0){};
+        \coordinate (p3) at (2, 2){};
+        \coordinate (p4) at (0, 2){};
+    }
+
+    \begin{scope}[
+        very thick,
+        decoration={markings, mark=at position 0.5 with {\arrow{>}}}
+    ]
+        \defcoords
+        \draw[postaction={decorate}] (p1) -- (p2);
+        \draw[postaction={decorate}] (p2) -- (p3);
+        \draw[postaction={decorate}] (p3) -- (p4);
+        \draw[postaction={decorate}] (p4) -- (p1);
+
+        \foreach \p in {p1, p2, p3, p4} {
+            \filldraw (\p) circle (2pt);
+        }
+    \end{scope}
+
+    \begin{scope}[
+        very thick,
+        shift={(4, 0)},
+        decoration={markings, mark=at position 0.5 with {\arrow{>}}}
+    ]
+        \defcoords
+        \draw[postaction={decorate}] (p1) -- (p2);
+        \draw[postaction={decorate}] (p2) -- (p3);
+        \draw[postaction={decorate}] (p3) -- (p4);
+        \draw[postaction={decorate}] (p4) -- (p1);
+        \draw[postaction={decorate}] (p0) -- (p2);
+        \draw[postaction={decorate}] (p0) -- (p3);
+        \draw[postaction={decorate}] (p0) -- (p4);
+        \draw[postaction={decorate}] (p0) -- (p1);
+
+        \foreach \p in {p0, p1, p2, p3, p4} {
+            \filldraw (\p) circle (2pt);
+        }
+    \end{scope}
+\end{tikzpicture}
+
