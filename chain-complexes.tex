@@ -326,6 +326,7 @@ with an equivalent sign flip applied to the $n + 1$-boundary matrix.
 Finally, we can write down a formula for the boundary matrices of the \emph{suspension} of a space -- the topological join with two isolated points instead of one -- in the same way:
 \begin{equation}
     \partial_{k + 1}' = \left[\begin{matrix}\partial_k & I & I \\ 0 & -\partial_{k - 1} & 0 \\ 0 & 0 & -\partial_{k - 1}\end{matrix}\right]
+    \label{eq:suspension-partial-k}
 \end{equation}
 and for the top cells
 \begin{equation}
@@ -605,7 +606,7 @@ As a proof of concept, we developed a software package called \emph{topomesh} wh
 We then implemented several common algorithms in computational geometry using these transformations.
 
 % -------------------------------------
-\subsection{Vertex splitting and convex hulls}
+\subsection{Convex hulls and vertex-split}
 
 The vertex-split transformation is the key computational kernel for computing convex hulls in any dimension.
 The source code for the vertex-split transformation is shown in figure \ref{fig:split-source-code}.
@@ -648,13 +649,32 @@ Our implementation of the convex hull algorithm takes in a function as argument 
 Computing Delaunay triangulations is equivalent to computing the lower half of a convex hull of the input points lifted to a paraboloid.
 We also implemented a Delaunay triangulation method which reuses our convex hull algorithm by supplying an insphere function instead of the usual signed volume function.
 
-% ---------------------------------------------
-\subsection{Constrained Delaunay triangulation}
+% ---------------------------------------------------
+\subsection{Constrained Delaunay triangulation and face-split}
 
-The split transformation alone is enough to compute convex hulls and unconstrained Delaunay triangulations.
-Computing a constrained Delaunay triangulation (CDT), on the other hand, requires both merges and bisections.
+The vertex-split transformation alone is enough to compute convex hulls and unconstrained Delaunay triangulations.
+Computing a constrained Delaunay triangulation (CDT), on the other hand, requires both merges and face-splits.
 We implemented a CDT algorithm based on \cite{anglada1997improved}.
 \textcolor{red}{Elaborate...}
+
+% -------------------------------------
+\subsection{Multi-face retriangulation}
+
+Finally, we implemented the tetrahedral mesh transformations described in \cite{misztal2009tetrahedral}.
+We tested our implementation as follows:
+\begin{enumerate}
+    \item Pick some number of vertices $n \ge 4$.
+    \item Generate all triangulations $\{T_1, \ldots, T_{C_n}\}$ of the polygon on $n$ vertices ($C_n$ is the $n$th Catalan number).
+    \item Repeat for some set number of trials:
+        \begin{enumerate}
+            \item Pick two triangulations $T$, $T'$ at random.
+            \item Generate the suspensions of each triangulation according to equations \eqref{eq:suspension-partial-k} and \eqref{eq:suspension-partial-n+1}.
+                Apply a random permutation and sign flip to the boundary matrices of each complex.
+                Call the resulting complexes $S$, $S'$.
+            \item Compute a chain map from $\partial S$ to $\partial S'$.
+            \item \textcolor{red}{Profit???}
+        \end{enumerate}
+\end{enumerate}
 
 
 % ==================
