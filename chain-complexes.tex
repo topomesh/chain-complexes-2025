@@ -663,6 +663,12 @@ Boundary operators are only necessary for representing a small patch of the topo
 Once the transformed patch is computed, it can be translated back to a set of simplices.
 Boundary operators are useful for describing non-simplicial intermediate states of a transformation; they are not space-optimal for describing an entire simplicial complex.
 
+We showed how to implement two common topological operations for tetrahedral mesh improvement.
+These operations assume a particular structure for the tetrahedra that they operate on.
+The \emph{small polyhedron reconnection} (SPR) approach, by contrast, works on any set of input tetrahedra at the cost of a more expensive search step \cite{marot2020reviving}.
+The linear algebraic representation may have the potential to accelerate small polyhedron reconnection or other approaches to tetrahedral mesh improvement.
+If reasonable polytope quality measures can be defined, it may instead be possible to search for optimal tetrahedralizations by iteratively bisecting the cavity into smaller polytopes that do not need to be simplicial until the end.
+
 When the objects of study can be represented as linear operators, we can apply linear algebraic reasoning to define transformations and verify that they preserve all of the important invariants.
 The condition in equation \eqref{eq:ddzero} that the product of two boundary operators is zero is a powerful invariant for ensuring the validity of the underlying topology.
 
