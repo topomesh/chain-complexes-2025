@@ -1,0 +1,83 @@
+\begin{tikzpicture}[scale=0.4]
+    \newcommand*{\defcoords}{
+        \coordinate (p0) at (1, 0){};
+        \coordinate (p1) at (0, 2){};
+        \coordinate (p2) at (-1, 0){};
+        \coordinate (p3) at (0, -2){};
+
+        \begin{scope}[very thick]
+            \draw (p0) -- (p1) -- (p2) -- (p3) -- cycle;
+            \foreach \p in {p0, p1, p2, p3} {
+                \filldraw (\p) circle (3pt);
+            }
+        \end{scope}
+
+    }
+
+    \begin{scope}[very thick]
+        \defcoords 
+        \node[] at (-1, 2) {(a)};
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(3.5, 0)}]
+        \defcoords
+        \node[] at (-1, 2) {(b)};
+        \draw[dashed] (p0) -- (p2);
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(7.0, 0)}]
+        \defcoords
+        \node[] at (-1, 2) {(c)};
+        \coordinate (p4) at (0, 0){};
+        \filldraw (p4) circle (3pt);
+        \draw[dashed] (p0) -- (p2) -- (p4);
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(10.5, 0)}]
+        \defcoords
+        \node[] at (-1, 2) {(d)};
+        \coordinate (p4) at (0, 0.5){};
+        \filldraw (p4) circle (3pt);
+        \draw[dashed] (p1) -- (p4);
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(0, -5)}]
+        \node[] at (-1, 2) {(e)};
+        \defcoords
+        \draw[dashed] (p0) -- (p2);
+        \coordinate (p4) at (0, 0.5){};
+        \filldraw (p4) circle (3pt);
+        \draw[dashed] (p1) -- (p4);
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(3.5, -5)}]
+        \node[] at (-1, 2) {(f)};
+        \coordinate (p0) at (0, 0){};
+        \coordinate (p1) at (1, 0){};
+        \coordinate (p2) at (-1, 0){};
+        \filldraw (p1) circle (3pt);
+        \filldraw (p2) circle (3pt);
+        \draw[dashed] (p1) -- (p2);
+        \draw[fill=none](p0) circle (1.0) {};
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(7.0, -5)}]
+        \defcoords
+        \node[] at (-1, 2) {(g)};
+        \draw[dashed] (p0) -- (p2);
+        \coordinate (p4) at (0, 0.5){};
+        \filldraw (p4) circle (3pt);
+        \draw[dashed] (p2) -- (p4);
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(10.5, -5)}]
+        \defcoords
+        \node[] at (-1, 2) {(h)};
+        \coordinate (p4) at (0, 0.25){};
+        \filldraw (p4) circle (3pt);
+        \draw [dashed] (p0) -- (p4);
+        \draw [dashed] (p1) -- (p4);
+        \draw [dashed] (p2) -- (p4);
+    \end{scope}
+
+\end{tikzpicture}

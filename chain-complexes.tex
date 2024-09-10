@@ -652,8 +652,33 @@ We also implemented a Delaunay triangulation method which reuses our convex hull
 % ---------------------------------------------------
 \subsection{Constrained Delaunay triangulation and face-split}
 
+\begin{figure}[t]
+    \begin{center}
+        \input{figures/face-split.tikz}
+    \end{center}
+    \caption{Test cases for splitting polygons along edges: (a) nothing to split at all, (b) splitting along an edge, (c) splitting along multiple edges, (d) nothing to split but with a hanging face, (e) splitting along an edge but with a hanging face, (f) straightforward split but with linearly dependent columns of $\partial_1$, (g) extraneous hanging edge, (h) three-way split.}
+    \label{fig:face-split-tests}
+\end{figure}
+
 The vertex-split transformation alone is enough to compute convex hulls and unconstrained Delaunay triangulations.
-Computing a constrained Delaunay triangulation (CDT), on the other hand, requires both merges and face-splits.
+Computing a constrained Delaunay triangulation (CDT) additionally requires merges and face-splits.
+
+A significant complication that can arise in computing the CDT is the presence of \emph{hanging edges} \cite{cheng2013delaunay}.
+Inserting a constrained edge into a CDT requires forming the polygonal cavity consisting of the union of all the triangles that the constrained edge passes through.
+The constrained edge is then inserted, dividing the polygonal cavity in two.
+The remaining two polygonal cavities are then repeatedly subdivided until only triangles remain.
+Now, the initial cavity formation can create a hanging edge.
+In this instance we know that the separator consists only of the constrained edge.
+At some later step, the hanging edge will be connected by two more edges and become part of the separator.
+In short, we can assume that at least one face of the separator is known from the outset, but not that we know the entire separator.
+Our implementation uses a breadth-first search to identify the entire separator from the starting faces.
+We then perform further searches to mark the remaining connected components.
+
+We first implemented the face-split transformation and tested it on several cases including ones with hanging edges.
+The test cases we chose are shown in Figure \ref{fig:face-split-tests}.
+Some of these cases should never show up in real problems, but we check for them anyway in the interest of completeness.
+Case (h), with only two out of the three separator edges known to start, is the scenario where a hanging edge is incorporated into a CDT.
+
 We implemented a CDT algorithm based on \cite{anglada1997improved}.
 \textcolor{red}{Elaborate...}
 
