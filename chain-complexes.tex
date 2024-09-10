@@ -62,6 +62,7 @@ We show how other higher-level transformations can be implemented in terms of th
 Finally, as a proof-of-concept, we implemented algorithms for computing convex hulls in arbitrary dimensions and constrained Delaunay triangulations in 2D.
 
 
+
 % ==============
 \section{Theory}
 
@@ -342,8 +343,12 @@ A 0-simplex is a single point, and a $k + 1$-simplex is the cone of a single poi
 Choosing the normalization factor $(-1)^n$ makes the repeated cone construction isomorphic to the positively-oriented simplex through a sequence of permutations and sign flips.
 With no normalization at all, the even-dimensional simplices under the cone construction are instead isomorphic to the standard construction \emph{but with the opposite orientation}.
 
+The constructions above are not new.
 Equation \eqref{eq:cone-partial-k} has appeared before in the literature on homological algebra \cite{gelfand1994homological}.
-Its use for practical computations, which we demonstrate below, has not appeared elsewhere as far as we know.
+The simpcomp package of the GAP system includes routines for computing topological cones of abstract simplicial complexes and for performing bistellar moves \cite{bjorner2000simplicial, effenberger2011simpcomp}.
+The polymake library also includes routines for bistellar moves \cite{gawrilow2000polymake}.
+Both simpcomp and polymake include these features for determining when two simplicial complexes are piecewise linear-homeomorphic, not for computational meshing.
+The utility of the topological cone for computational meshing, which we demonstrate below, has not appeared elsewhere as far as we know.
 
 
 % =======================
