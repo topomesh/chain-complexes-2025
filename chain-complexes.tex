@@ -719,6 +719,14 @@ The \emph{small polyhedron reconnection} (SPR) approach, by contrast, works on a
 The linear algebraic representation may have the potential to accelerate small polyhedron reconnection or other approaches to tetrahedral mesh improvement.
 If reasonable polytope quality measures can be defined, it may instead be possible to search for optimal tetrahedralizations by iteratively bisecting the cavity into smaller polytopes that do not need to be simplicial until the end.
 
+We checked that the constructions defined here work as expected by testing that we could compute convex hulls, Delaunay triangulations, etc.
+We did not give formal proofs that each operation is guaranteed to result in a topologically valid end state given certain preconditions.
+For example, applying the face-split transformation assumes that a certain integer linear system is solvable.
+Are there cases where this system has either no solution or multiple solutions despite the fact that the polytope is splittable?
+Are there cases where the system does have a unique solution but not one that produces the desired final topology?
+We found empirically that the linear system was solvable in all the cases that we tried and gave the expected results.
+But an interesting future direction would be to use formal methods to verify these transformations using established results, for example on total unimodularity of boundary matrices \cite{dey2010optimal}.
+
 When the objects of study can be represented as linear operators, we can apply linear algebraic reasoning to define transformations and verify that they preserve all of the important invariants.
 The condition in equation \eqref{eq:ddzero} that the product of two boundary operators is zero is a powerful invariant for ensuring the validity of the underlying topology.
 
