@@ -685,21 +685,48 @@ We implemented a CDT algorithm based on \cite{anglada1997improved}.
 % -------------------------------------
 \subsection{Multi-face retriangulation}
 
-Finally, we implemented the tetrahedral mesh transformations described in \cite{misztal2009tetrahedral}.
-We tested our implementation as follows:
-\begin{enumerate}
-    \item Pick some number of vertices $n \ge 4$.
-    \item Generate all triangulations $\{T_1, \ldots, T_{C_n}\}$ of the polygon on $n$ vertices ($C_n$ is the $n$th Catalan number).
-    \item Repeat for some set number of trials:
-        \begin{enumerate}
-            \item Pick two triangulations $T$, $T'$ at random.
-            \item Generate the suspensions of each triangulation according to equations \eqref{eq:suspension-partial-k} and \eqref{eq:suspension-partial-n+1}.
-                Apply a random permutation and sign flip to the boundary matrices of each complex.
-                Call the resulting complexes $S$, $S'$.
-            \item Compute a chain map from $\partial S$ to $\partial S'$.
-            \item \textcolor{red}{Profit???}
-        \end{enumerate}
-\end{enumerate}
+Finally, we implemented part of the multi-face retriangulation described in \cite{misztal2009tetrahedral}.
+This transformation is assumed to operate on the suspension of a set of filling triangles.
+In \cite{misztal2009tetrahedral}, the filling triangles are identified via a search procedure and are then transformed into another triangulation of the same polygon using Klincsek's algorithm \cite{klincsek1980minimal}.
+Here we focus entirely on the transformation step and assume that we are given both the filling triangles and the tetrahedra that they fill.
+The goal is to take the suspension $S_1$ of a set of triangles and replace it with the suspension $S_2$ of a given set of triangles $T_2$.
+
+The Python source code for our implementation is shown in Figure \ref{fig:mfrt-code}.
+The key features of the topomesh library that this code uses are:
+\begin{description}
+    \item[\texttt{closure}]: given a set of $k$-cells $\{\sigma_\alpha\}$, return all their immediate faces, their faces' faces, and so on
+    \item[\texttt{subcomplex}]: given a set of cells $\{\sigma_\alpha^k\}$, return the boundary matrices corresponding to the subcomplex formed by these cells
+    \item[\texttt{find\_isomorphism}]: given a pair of complexes, find the permutations and sign flips that transform one into the other.
+\end{description}
+We tested the implementation by repeatedly generating two random triangulations of a polygon of $n$ vertices for $n = 4, 5, \ldots, 10$.
+We form the suspension of the first set of triangles and apply a random permutation and sign flip.
+The test is to see whether we can match its boundary to the boundary of the suspension of the second triangulation.
+
+\begin{figure}[t]
+\begin{minted}[fontsize=\footnotesize,linenos]{python}
+import numpy as np
+from topomesh import polygonal
+Topology = list[np.ndarray]
+
+def boundary_complex(T: Topology) -> Topology:
+    num_cells = T[-1].shape[1]
+    C = T[-1] @ np.ones(num_cells)
+    face_ids = np.flatnonzero(C)
+    cell_ids = polygonal.closure(T[:-1], face_ids)
+    return polygonal.subcomplex(T[:-1], cell_ids)
+
+def retriangulate(
+    S_1: Topology,
+    T_2: Topology,
+) -> Topology:
+    dS_1 = boundary_complex(S_1)
+    S_2 = polygonal.join_vertices(T_2)
+    dS_2 = boundary_complex(S_2)
+    return polygonal.find_isomorphism(dS_1, dS_2)
+\end{minted}
+    \caption{Source code for multi-face retriangulation.}
+\label{fig:mfrt-code}
+\end{figure}
 
 
 % ==================
