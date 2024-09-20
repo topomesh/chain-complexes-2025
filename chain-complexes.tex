@@ -679,6 +679,21 @@ The test cases we chose are shown in Figure \ref{fig:face-split-tests}.
 Some of these cases should never show up in real problems, but we check for them anyway in the interest of completeness.
 Case (h), with only two out of the three separator edges known to start, is the scenario where a hanging edge is incorporated into a CDT.
 
+\begin{figure}
+    \begin{center}
+    \includegraphics[width=0.98\linewidth]{figures/retria.pdf}
+    \end{center}
+    \caption{The steps of the cavity retriangulation algorithm.
+    The hanging edge at the start and the non-simplicial intermediate states are all representable as boundary operators.}
+    \label{fig:cheng-dey-shewchuk-example}
+\end{figure}
+
+We then tested several realistic configurations for cavity retriangulation.
+Figure \ref{fig:cheng-dey-shewchuk-example} shows one such test case from Figure 3.13 of \cite{cheng2013delaunay}.
+This test case is a non-convex cavity with a hanging edge.
+The algorithm proceeds entirely by subdividing polygons into smaller ones with no special cases to handle hanging edges beyond the breadth-first searches described above.
+By contrast, the CavityCDT algorithm described in \cite{cheng2013delaunay} requires special cases to re-traverse hanging edges and to delete triangles of the wrong orientation.
+
 We implemented a CDT algorithm based on \cite{anglada1997improved}.
 \textcolor{red}{Elaborate...}
 

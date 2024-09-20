@@ -9,7 +9,10 @@ FIGURES3D := $(patsubst %.sk,%.tikz,$(wildcard figures/*.sk))
 figures/cone.pdf: figures/cone.py
 	cd figures && python cone.py
 
-%.pdf: %.tex %.bib $(FIGURES3D) $(FIGURES2D) figures/cone.pdf
+figures/retria.pdf: figures/retria.py
+	cd figures && python retria.py
+
+%.pdf: %.tex %.bib $(FIGURES3D) $(FIGURES2D) figures/cone.pdf figures/retria.pdf
 	pdflatex -shell-escape $<
 	bibtex $*
 	pdflatex -shell-escape $<
