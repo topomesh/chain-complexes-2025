@@ -355,7 +355,7 @@ The utility of the topological cone for computational meshing, which we demonstr
 % =======================
 \section{Transformations}
 
-Having written down the explicit formulas \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} for the boundary matrices of a cone, we can then apply them to define transformations of guaranteed validity.
+Having written down the explicit formulas \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} for the boundary matrices of a cone, we can then apply them to define transformations.
 
 % ------------------
 \subsection{Merging}
@@ -461,9 +461,10 @@ The Bowyer-Watson algorithm for computing Delaunay triangulations and all common
 A \emph{face-split} divides a polytope into several cells along a collection of splitting faces.
 We assume that the initial polytope is not incident upon the splitting faces.
 The correctness criteria for this operation are that (1) each new polytope is incident on the splitting faces and (2) the boundary of the sum of all polytopes does not change.
+
 In order to be able to split the top cell, we need to assume a certain connectivity structure between its faces.
-A $k$-\emph{path} in $\Omega$ is a collection $\{f_0, s_0, f_1, s_1, \ldots, f_{m - 1}, s_{m - 1}, f_m\}$ such that $s_i$ is a common sub-face of both $f_i$ and $f_{i + 1}$ for each $i$.
-Given two collections of faces $F_1$, $F_2$, we say that a third collection of faces $F$ is a \emph{separator} for $F_1$, $F_2$ if any path from a cell $f_1$ in $F_1$ to a cell $f_2$ in $F_2$ must include some cell $f$ in $F$.
+A $k$-\emph{path} in $\Omega$ is a collection $\{f_0, s_0, f_1, s_1, \ldots, f_{m - 1}, s_{m - 1}, f_m\}$ such that $s_i$ is a $k - 1$-face of both $f_i$ and $f_{i + 1}$ for each $i$.
+Given two collections of $k$-cells $F_1$, $F_2$, we say that a third collection of $k$-cells $F$ is a \emph{separator} for $F_1$, $F_2$ if any path from a cell $f_1$ in $F_1$ to a cell $f_2$ in $F_2$ must pass through a $k - 1$-face $s$ of some $f$ in $F$.
 The definition is similar to that of graph theory but with some important differences in the case of polytopal complexes.
 
 In order to be able to subdivide $P$ into multiple cells, we need to be able to partition its faces into two or more groups $\{F_1, \ldots, F_m\}$ with a common separator $F_0$.
@@ -490,12 +491,14 @@ In all, the new matrix will have the form
 \begin{equation}
     \partial_n' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
 \end{equation}
-where the adjacencies $[F_0, P_i]$ need to be solved for.
-Provided that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, the boundary of the new polytope will be the same as the old.
+where the incidences $[F_0, P_i]$ need to be solved for.
+The incidences $[F_i, P]$ are the same as in the initial polytope.
+If we can show that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, then the boundary of the new polytopes will be the same as the old.
 To preserve the fundamental equation $\partial\partial = 0$, we need that
 \begin{equation}
-    [S, F_0][F_0, P_i] = -[S, F_i][F_i, P].
+    [S, F_0][F_0, P_i] = -[S, F_i][F_i, P]
 \end{equation}
+for each $i$.
 We can then attempt to find a solution of this collection of linear systems of equations.
 The existence of a solution is not guaranteed a priori, but if we can find one then it defines a valid subdivision of the original cell.
 The system is also rectangular, so it may be under- or over-determined depending on the number of faces and subfaces.
