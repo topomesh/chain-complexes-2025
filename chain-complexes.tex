@@ -411,7 +411,7 @@ Proceeding down by dimension, we remove any row from $\partial_k'$ that is all z
 Figure \ref{fig:split-transformation} illustrates the split transformation on a single quadrilateral and shows the boundary matrices before and after.
 The Bowyer-Watson algorithm for computing Delaunay triangulations and all common algorithms for computing convex hulls require only the vertex-split transformation \cite{cheng2013delaunay}.
 
-\begin{figure}[h]
+\begin{figure}[t]
     \begin{center}
         \input{figures/split-quad.tikz}
     \end{center}
@@ -458,6 +458,17 @@ The Bowyer-Watson algorithm for computing Delaunay triangulations and all common
 % -------------------------
 \subsection{Face-splitting}
 
+\begin{figure}[t]
+    \begin{center}
+        \input{figures/separator.tikz}
+    \end{center}
+    \caption{(a) An initial polygon.
+    (b) Add separator cells, shown in grey; the connected components are in teal and orange.
+    A path from a teal edge to an orange edge does not have to pass through a grey edge, but it does have to pass through one of its faces, i.e. a grey vertex.
+    (c) Split the polygon in two along the separator.}
+    \label{fig:separator}
+\end{figure}
+
 A \emph{face-split} divides a polytope into several cells along a collection of splitting faces.
 We assume that the initial polytope is not incident upon the splitting faces.
 The correctness criteria for this operation are that (1) each new polytope is incident on the splitting faces and (2) the boundary of the sum of all polytopes does not change.
@@ -466,6 +477,7 @@ In order to be able to split the top cell, we need to assume a certain connectiv
 A $k$-\emph{path} in $\Omega$ is a collection $\{f_0, s_0, f_1, s_1, \ldots, f_{m - 1}, s_{m - 1}, f_m\}$ such that $s_i$ is a $k - 1$-face of both $f_i$ and $f_{i + 1}$ for each $i$.
 Given two collections of $k$-cells $F_1$, $F_2$, we say that a third collection of $k$-cells $F$ is a \emph{separator} for $F_1$, $F_2$ if any path from a cell $f_1$ in $F_1$ to a cell $f_2$ in $F_2$ must pass through a $k - 1$-face $s$ of some $f$ in $F$.
 The definition is similar to that of graph theory but with some important differences in the case of polytopal complexes.
+See Figure \ref{fig:separator} for an illustration.
 
 In order to be able to subdivide $P$ into multiple cells, we need to be able to partition its faces into two or more groups $\{F_1, \ldots, F_m\}$ with a common separator $F_0$.
 Moreover, we assume at first that $[P, F_0] = 0$ and $[P, F_i] \neq 0$ for $i \ge 1$.
@@ -580,7 +592,7 @@ For example, Figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by 
 Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
 (We've shown an initial merge step for illustrative purposes, but this merge is actually part of the subsequent split.)
 
-\begin{figure}[h]
+\begin{figure}[t]
     \tikzset{ec/.style={every coordinate/.try}}
 
     \begin{center}
@@ -589,9 +601,7 @@ Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
     \caption{A 2-2 flip, implemented as a sequence of merges and splits.
     The vertex added by splitting the quadrilateral is deleted when the two edges are merged in the final transformation.}
     \label{fig:2-2-flip}
-\end{figure}
 
-\begin{figure}[h]
     \begin{center}
         \input{figures/tetrahedra.tikz}
     \end{center}
@@ -657,7 +667,7 @@ We also implemented a Delaunay triangulation method which reuses our convex hull
 
 \begin{figure}[t]
     \begin{center}
-        \input{figures/face-split.tikz}
+        \input{figures/face-split-test.tikz}
     \end{center}
     \caption{Test cases for splitting polygons along edges: (a) nothing to split at all, (b) splitting along an edge, (c) splitting along multiple edges, (d) nothing to split but with a hanging face, (e) splitting along an edge but with a hanging face, (f) straightforward split but with linearly dependent columns of $\partial_1$, (g) extraneous hanging edge, (h) three-way split.}
     \label{fig:face-split-tests}

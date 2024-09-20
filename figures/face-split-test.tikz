@@ -15,7 +15,7 @@
     }
 
     \begin{scope}[very thick]
-        \defcoords 
+        \defcoords
         \node[] at (-1, 2) {(a)};
     \end{scope}
 

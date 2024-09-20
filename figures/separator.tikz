@@ -1,0 +1,59 @@
+\begin{tikzpicture}[scale=0.7]
+    \newcommand*{\defcoords}{
+        \coordinate (p0) at (0, 0){};
+        \coordinate (p1) at (1, 0){};
+        \coordinate (p2) at (0.75, 0.65){};
+        \coordinate (p3) at (-3/5, 4/5){};
+        \coordinate (p4) at (-1, 0){};
+        \coordinate (p5) at (-4/5, -3/5){};
+        \coordinate (p6) at (0, -1){};
+        \coordinate (p7) at (3/5, -4/5){};
+    }
+
+    \begin{scope}[very thick]
+        \defcoords
+        \node[] at (-1.2, 1.2) {(a)};
+
+        \draw[fill, gray] (p1) -- (p2) -- (p3) -- (p4) -- (p5) -- (p6) -- (p7) -- cycle;
+        \draw[] (p1) -- (p2) -- (p3) -- (p4) -- (p5) -- (p6) -- (p7) -- cycle;
+        \foreach \p in {p1, p2, p3, p4, p5, p6, p7} {
+            \filldraw (\p) circle (2pt);
+        }
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(3.5, 0)}]
+        \defcoords
+        \node[] at (-1.2, 1.2) {(b)};
+
+        \draw[teal!65] (p1) -- (p2) -- (p3) -- (p4);
+        \draw[orange!65] (p4) -- (p5) -- (p6) -- (p7) -- (p1);
+        \foreach \p in {p0, p1, p4} {
+            \filldraw[gray] (\p) circle (2pt);
+        }
+        \foreach \p in {p2, p3} {
+            \filldraw[teal!65] (\p) circle (2pt);
+        }
+        \foreach \p in {p5, p6, p7} {
+            \filldraw[orange!65] (\p) circle (2pt);
+        }
+        \draw[gray] (p1) -- (p4);
+    \end{scope}
+
+    \begin{scope}[very thick, shift={(7, 0)}]
+        \defcoords
+        \node[] at (-1.2, 1.2) {(c)};
+
+        \draw[fill, teal!65] (p1) -- (p2) -- (p3) -- (p4) -- (p0) -- cycle;
+        \draw (p1) -- (p2) -- (p3) -- (p4) -- (p0) -- cycle;
+        \draw[fill, orange!65] (p4) -- (p5) -- (p6) -- (p7) -- (p1) -- (p0) -- cycle;
+        \draw (p4) -- (p5) -- (p6) -- (p7) -- (p1) -- (p0) -- cycle;
+        \foreach \p in {p0, p1, p2, p3, p4, p5, p6, p7} {
+            \filldraw (\p) circle (2pt);
+        }
+    \end{scope}
+
+    \begin{scope}[very thick]
+        \draw[->] (1.25, -1) arc[start angle=225, end angle=315, radius=0.75];
+        \draw[->] (4.75, -1) arc[start angle=225, end angle=315, radius=0.75];
+    \end{scope}
+\end{tikzpicture}
