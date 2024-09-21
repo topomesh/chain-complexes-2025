@@ -615,48 +615,79 @@ Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
 % =====================
 \section{Demonstration}
 
-As a proof of concept, we developed a software package called \emph{topomesh} which implements the transformations defined above.
-We then implemented several common algorithms in computational geometry using these transformations.
+As a proof of concept, we developed a Python package called \emph{topomesh} which implements the transformations defined above.
+The main external dependency is numpy for matrix algebra and array operations.
+For geometric predicates, we compute determinants using interval arithmetic; if the result interval contains zero, we try again with exact rationals.
+We then implemented several common algorithms in computational geometry using the linear-algebraic representation of topological transformations described in the previous section.
+
+These transformations and algorithms are built around a small core functionality.
+The two key data structures are simplicial and polytopal topologies.
+Functions for querying and operating on both data types are in the modules \texttt{simplicial} and \texttt{polytopal} respectively.
+\begin{description}
+    \item[\texttt{polytopal.Topology}]: An $n$-dimensional polytopal topology is a list of $n + 1$ integer matrices.
+        The 0th matrix is a row vector of all 1s.
+        A topology is considered valid if it obeys the fundamental relation $\partial\partial = 0$, all its entries are between -1 and +1, and the number of non-zero entries in every column of $\partial_k$ is either 0 or $\ge k + 1$.
+    \item[\texttt{simplicial.Topology}]: An $n$-dimensional simplicial topology is an array with one row for every top simplex and $n + 1$ columns.
+\end{description}
+The condition on the number of non-zero entries in each column for a polytopal complex is necessary to ensure regularity.
+
+The simplicial module includes routines for checking that simplices are consistently oriented with respect to each other.
+The remaining features are all in the polytopal module.
+\begin{description}
+    \item[\texttt{closure}]: Given the integer IDs of a set of $k$-cells $\{\sigma_\alpha\}$, return the IDs of their immediate faces, their faces' faces, and so on.
+    \item[\texttt{subcomplex}]: Given the integer IDs of a set of cells $\{\sigma_\alpha^k\}$ for each dimension $k = 0,\ldots,n$, return the boundary matrices corresponding to the subcomplex formed by these cells.
+    \item[\texttt{find\_isomorphism}]: Given a pair of complexes, return the permutations and sign flips that transform one into the other if they exist.
+    \item[\texttt{to\_simplicial}]: Given a polytopal complex, convert it to a simplicial complex if possible.
+        For each top cell of the input complex, find an isomorphism of the subcomplex consisting of this cell and its closure to the boundary operators of the standard simplex using the \texttt{find\_isomorphism} routine.
+    \item[\texttt{from\_simplicial}]: Given a simplicial complex, return the equivalent polytopal complex by assigning cell IDs to all lower-dimensional simplices and repeatedly applying equation \eqref{eq:simplicial-incidence-numbers}.
+    \item[\texttt{join\_vertex}] Given a polytopal complex, return the join with a single point (i.e. the cone) as shown in equations \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1}.
+    \item[\texttt{join\_vertices}] Given a polytopal complex, return the join with two points (i.e. the suspension) as shown in equations \eqref{eq:suspension-partial-k} and \eqref{eq:suspension-partial-n+1}.
+\end{description}
+The source code for the \texttt{join\_vertex} routine is shown in Figure \ref{fig:join-vertex-source-code}; the source code for the \texttt{join\_vertices} function is similar.
+The main advantage of working with the linear-algebraic representation is that many key routines are easy to implement and test.
+The very concise source code for \texttt{join\_vertex} shown here is an example.
+We do not claim that using the linear-algebraic representation has superior performance characteristics to the conventional approach based on applying transformations directly to the simplicial data type.
+
+\begin{figure}
+    \begin{minted}[fontsize=\footnotesize,linenos]{python}
+import numpy as np
+
+Topology = list[np.ndarray]
+
+def join_vertex(D: Topology) -> Topology:
+    n = len(D) - 1
+    num_vertices = D[0].shape[1]
+    # Create the boundary matrices for 1 <= k < n
+    E = [ones((1, num_vertices + 1))]
+    for k in range(1, n + 1):
+        num_cells = D[k].shape[1]
+        num_sub_faces, num_faces = D[k - 1].shape
+        I = eye(num_faces)
+        Z = zeros((num_sub_faces, num_cells))
+        E_k = np.block([[D[k], I], [Z, -D[k - 1]]])
+        E.append(E_k)
+
+    # Create the top-dimensional boundary matrix
+    num_cells = D[n].shape[1]
+    I = eye(num_cells)
+    E_n = (-1) ** n * np.vstack((-I, D[n]))
+    E.append(E_n)
+
+    return E
+    \end{minted}
+    \caption{Python source code for the split transformation.
+    Lines 15 and 21 correspond to equations \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} respectively.}
+    \label{fig:join-vertex-source-code}
+\end{figure}
 
 % -------------------------------------
 \subsection{Convex hulls and vertex-split}
 
 The vertex-split transformation is the key computational kernel for computing convex hulls in any dimension.
-The source code for the vertex-split transformation is shown in figure \ref{fig:split-source-code}.
-\begin{figure}
-    \begin{minted}[fontsize=\footnotesize,linenos]{python}
-import numpy as np
-from typing import List
+The implementation of the vertex-split transformation consists of a small modification of the \texttt{join\_vertex} routine shown in Figure \ref{fig:join-vertex-source-code}.
 
-Topology = List[np.ndarray]
-
-def vertex_split(D: Topology) -> Topology:
-    # Create the boundary matrices for 1 <= k < n
-    n_vertices = D[0].shape[1]
-    E = [np.ones((1, n_vertices + 1), int)]
-    for k in range(1, len(D) - 1):
-        n_cells = D[k].shape[1]
-        n_sub_faces, n_faces = D[k - 1].shape
-        I = np.identity(n_faces, int)
-        Z = np.zeros((n_sub_faces, n_cells), int)
-        E_k = np.block([[D[k], I], [Z, -D[k - 1]]])
-        E.append(E_k)
-
-    # Create the top-dimensional boundary matrix
-    C = np.diag(np.sum(D[-1], axis=1))
-    E_n = np.vstack((C, -D[-2] @ C))
-    E.append(E_n)
-    return E
-    \end{minted}
-    \caption{Python source code for the split transformation.
-    Line 15 corresponds to equation \eqref{eq:cone-partial-k}; lines 19-20 correspond to equation \eqref{eq:vertex-split-n}.
-    The real version has some additional logic to remove empty cells.}
-    \label{fig:split-source-code}
-\end{figure}
-
-We used the split transformation to implement a convex hull algorithm that works in arbitrary dimensions.
+We used the vertex-split transformation to implement a convex hull algorithm that works in arbitrary dimensions.
 To test the convex hull code, we used (1) random point sets up to dimension 5 and (2) several synthetic input sets with various degeneracies such as coplanarity.
-For geometric predicates, we first compute the determinant using interval arithmetic; if the result interval contains zero, we try again with exact rationals.
 
 Our implementation of the convex hull algorithm takes in a function as argument which supplies the procedure for computing the signed volume predicate.
 Computing Delaunay triangulations is equivalent to computing the lower half of a convex hull of the input points lifted to a paraboloid.
@@ -673,17 +704,17 @@ We also implemented a Delaunay triangulation method which reuses our convex hull
     \label{fig:face-split-tests}
 \end{figure}
 
-The vertex-split transformation alone is enough to compute convex hulls and unconstrained Delaunay triangulations.
-Computing a constrained Delaunay triangulation (CDT) additionally requires merges and face-splits.
+The vertex-split transformation is sufficient for computing convex hulls and unconstrained Delaunay triangulations.
+Computing a constrained Delaunay triangulation (CDT) requires merges and face-splits.
+We follow the approach of \cite{anglada1997improved} for computing CDTs.
+First, we compute an unconstrained triangulation of the input point set.
+We then add constrained edges one by one.
+To add a constrained edge, we (1) merge all of the triangles that contain it into one polygon and remove any edges that cross the constrained edge; (2) add the constrained edge, dividing this polygon in two; and (3) retriangulating the remaining polygonal cavities in order to maintain the constrained Delaunay property.
 
-A significant complication that can arise in computing the CDT is the presence of \emph{hanging edges} \cite{cheng2013delaunay}.
-Inserting a constrained edge into a CDT requires forming the polygonal cavity consisting of the union of all the triangles that the constrained edge passes through.
-The constrained edge is then inserted, dividing the polygonal cavity in two.
-The remaining two polygonal cavities are then repeatedly subdivided until only triangles remain.
-Now, the initial cavity formation can create a hanging edge.
-In this instance we know that the separator consists only of the constrained edge.
+A significant complication that can arise when inserting constrained edges is the presence of \emph{hanging edges} of the polygonal cavity \cite{cheng2013delaunay}.
+At the initial insertion of the constrained edge and subsequent splitting of the polygonal cavity, we know that the separator consists only of the constrained edge.
 At some later step, the hanging edge will be connected by two more edges and become part of the separator.
-In short, we can assume that at least one face of the separator is known from the outset, but not that we know the entire separator.
+So we can assume that at least one face of the separator is known from the outset, but at later stages we might not know what the entire separator is.
 Our implementation uses a breadth-first search to identify the entire separator from the starting faces.
 We then perform further searches to mark the remaining connected components.
 
@@ -692,7 +723,7 @@ The test cases we chose are shown in Figure \ref{fig:face-split-tests}.
 Some of these cases should never show up in real problems, but we check for them anyway in the interest of completeness.
 Case (h), with only two out of the three separator edges known to start, is the scenario where a hanging edge is incorporated into a CDT.
 
-\begin{figure}
+\begin{figure}[t]
     \begin{center}
     \includegraphics[width=0.98\linewidth]{figures/retria.pdf}
     \end{center}
@@ -707,25 +738,17 @@ This test case is a non-convex cavity with a hanging edge.
 The algorithm proceeds entirely by subdividing polygons into smaller ones with no special cases to handle hanging edges beyond the breadth-first searches described above.
 By contrast, the CavityCDT algorithm described in \cite{cheng2013delaunay} requires special cases to re-traverse hanging edges and to delete triangles of the wrong orientation.
 
-We implemented a CDT algorithm based on \cite{anglada1997improved}.
-\textcolor{red}{Elaborate...}
 
 % -------------------------------------
 \subsection{Multi-face retriangulation}
 
-Finally, we implemented part of the multi-face retriangulation described in \cite{misztal2009tetrahedral}.
+Finally, we implemented part of the multi-face retriangulation transformation described in \cite{misztal2009tetrahedral}.
 This transformation is assumed to operate on the suspension of a set of filling triangles.
 In \cite{misztal2009tetrahedral}, the filling triangles are identified via a search procedure and are then transformed into another triangulation of the same polygon using Klincsek's algorithm \cite{klincsek1980minimal}.
 Here we focus entirely on the transformation step and assume that we are given both the filling triangles and the tetrahedra that they fill.
 The goal is to take the suspension $S_1$ of a set of triangles and replace it with the suspension $S_2$ of a given set of triangles $T_2$.
 
 The Python source code for our implementation is shown in Figure \ref{fig:mfrt-code}.
-The key features of the topomesh library that this code uses are:
-\begin{description}
-    \item[\texttt{closure}]: given a set of $k$-cells $\{\sigma_\alpha\}$, return all their immediate faces, their faces' faces, and so on
-    \item[\texttt{subcomplex}]: given a set of cells $\{\sigma_\alpha^k\}$, return the boundary matrices corresponding to the subcomplex formed by these cells
-    \item[\texttt{find\_isomorphism}]: given a pair of complexes, find the permutations and sign flips that transform one into the other.
-\end{description}
 We tested the implementation by repeatedly generating two random triangulations of a polygon of $n$ vertices for $n = 4, 5, \ldots, 10$.
 We form the suspension of the first set of triangles and apply a random permutation and sign flip.
 The test is to see whether we can match its boundary to the boundary of the suspension of the second triangulation.
