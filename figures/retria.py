@@ -52,8 +52,7 @@ fig, axes = plt.subplots(
 
 for ax in axes.flatten():
     ax.set_aspect("equal")
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
+    ax.axis("off")
 
 for index, (ax, edge_set) in enumerate(zip(axes.flatten(), edge_sets)):
     ax.scatter(*points.T, 10.0, color="black")
