@@ -789,13 +789,29 @@ This idea has appeared before, for example in the work of DiCarlo and others \ci
 
 Boundary operators are only necessary for representing a small patch of the topology at a time.
 Once the transformed patch is computed, it can be translated back to a set of simplices.
+We adopted this approach in our implementation of each of the algorithms described above.
 Boundary operators are useful for describing non-simplicial intermediate states of a transformation; they are not space-optimal for describing an entire simplicial complex.
+
+\begin{figure}[t]
+    \begin{center}
+        \includegraphics[width=0.9\linewidth]{figures/parallel-mesh.pdf}
+    \end{center}
+    \caption{A triangular mesh, partitioned for parallel execution; the thick lines are the subdomain boundaries.
+    The domain interiors are simplicial, but the connectivity between domains are polytopal.}
+    \label{fig:parallel-mesh}
+\end{figure}
+
+We focused entirely on serial algorithms where the goal was to produce a simplicial mesh.
+Doing large-scale 3D finite element analysis, however, requires the mesh to be decomposed into subdomains that are then distributed to different processes.
+The connectivity between these subdomains does not necessarily have a simplicial or cubical structure.
+We can then describe the overall topology hierarchically -- a simplicial representation for the connectivity inside a domains, and a polytopal complex for the connectivity among domains, as shown in Figure \ref{fig:parallel-mesh}.
+The incidence numbers can then be supplemented with a bidirectional map describing the association between integer cell IDs in one domain with their IDs in the neighboring domain.
 
 We showed how to implement two common topological operations for tetrahedral mesh improvement.
 These operations assume a particular structure for the tetrahedra that they operate on.
-The \emph{small polyhedron reconnection} (SPR) approach, by contrast, works on any set of input tetrahedra at the cost of a more expensive search step \cite{marot2020reviving}.
-The linear algebraic representation may have the potential to accelerate small polyhedron reconnection or other approaches to tetrahedral mesh improvement.
-If reasonable polytope quality measures can be defined, it may instead be possible to search for optimal tetrahedralizations by iteratively bisecting the cavity into smaller polytopes that do not need to be simplicial until the end.
+The \emph{small polyhedron reconnection} (SPR) approach, on the other hand, works on any set of input tetrahedra at the cost of a more expensive search step \cite{marot2020reviving}.
+The linear-algebraic representation might have the potential to accelerate SPR by instead bisecting cavities into smaller polytopes that only become simplicial by the end.
+Given a sensible polytope quality measure, the branch and bound procedure over polytopes might be faster or easier to implement than its counterpart over tetrahedra.
 
 We checked that the constructions defined here work as expected by testing that we could compute convex hulls, Delaunay triangulations, etc.
 We did not give formal proofs that each operation is guaranteed to result in a topologically valid end state given certain preconditions.

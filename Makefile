@@ -1,19 +1,17 @@
-ll: chain-complexes.pdf
+all: chain-complexes.pdf
 
 %.tikz: %.sk
 	sketch $< -o $@
 
 FIGURES2D := $(wildcard figures/*.tikz)
 FIGURES3D := $(patsubst %.sk,%.tikz,$(wildcard figures/*.sk))
+FIGURESPY := $(patsubst %.py,%.pdf,$(wildcard figures/*.py))
 
-figures/cone.pdf: figures/cone.py
-	cd figures && python cone.py
+figures/%.pdf: figures/%.py
+	cd figures && python $*.py
 
-figures/retria.pdf: figures/retria.py
-	cd figures && python retria.py
-
-%.pdf: %.tex %.bib $(FIGURES3D) $(FIGURES2D) figures/cone.pdf figures/retria.pdf
+chain-complexes.pdf: chain-complexes.tex chain-complexes.bib $(FIGURES3D) $(FIGURES2D) $(FIGURESPY)
 	pdflatex -shell-escape $<
-	bibtex $*
+	bibtex chain-complexes
 	pdflatex -shell-escape $<
 	pdflatex -shell-escape $<
