@@ -826,6 +826,91 @@ When the objects of study can be represented as linear operators, we can apply l
 The condition in equation \eqref{eq:ddzero} that the product of two boundary operators is zero is a powerful invariant for ensuring the validity of the underlying topology.
 
 
+% ==============
+\appendix
+\section{Theory}
+
+Here we will expound some on the underlying theory behind the purely operational definition we gave of polytopal complexes above.
+Understanding this theory at a deep level is not necessary in order to instrumentalize it to perform computations.
+But the objects of study are more abstract than, say, a simplex or a point set.
+The usual introduction to algebraic topology starts with CW complexes \cite{hatcher2002algebraic}.
+Understanding how to get from a CW complex to what we really care about -- a sequence of boundary operators -- requires knowledge of homology or degree theory first.
+Moreover, these boundary operators are linear mappings between certain modules, the spaces of \emph{chains}.
+The chain spaces are defined as formal linear combinations of cells of the mesh.
+On introducing the idea of chains, many readers will scratch their heads and wonder what on earth we mean by multiplying a triangle by four -- is it creating four copies of a triangle?
+Not quite...
+In our experience, readers find it unsatisfying to hand-wave the issue away by telling them to think of these algebraic operations as purely formal manipulations with no intrinsic meaning.
+Instead, we will take as our theoretical underpinning the theory of \emph{currents} on a manifold, a kind of dual to the theory of differential forms.
+
+Let $\Omega$ be a compact $n$-dimensional differentiable manifold.
+A \emph{differential $k$-form} $u$ on $\Omega$ is a smooth, totally antisymmetric, covariant rank-$k$ tensor field on $\Omega$ (i.e. it has all lower indices).
+We write $\mathscr F_k\Omega$ for the space of all differential $k$-forms.
+The \emph{wedge product} is a bilinear operator $\cdot\wedge\cdot : \mathscr F_k\times\mathscr F_\ell \to \mathscr F_{k + \ell}$ that acts on a pair of forms $u$, $v$ by antisymmetrizing their outer product $u \otimes v$.
+The \emph{exterior derivative} operator $d_k$ is the unique linear mapping $d_k : \mathscr F_k\Omega \to \mathscr F_{k + 1}\Omega$ such that (1) $d_0$ agrees with the usual differential on scalar fields, (2) $d_1d_0f = 0$ for any scalar field, and (3)
+\begin{equation}
+    d_{k + \ell}(u\wedge v) = d_ku\wedge v + (-1)^k u\wedge d_\ell v
+\end{equation}
+for any $k$-form $u$ and $\ell$-form $v$.
+Where unimportant or clear from context, we will omit the subscript and just write $d$.
+For any $k$-form $u$,
+\begin{equation}
+    d_{k + 1}d_k u = 0.
+\end{equation}
+Let $M$ be an oriented, differentiable, $k$-dimensional submanifold with boundary.
+We assume as given the notion of integration of differential forms on oriented submanifolds.
+If $M$ is an oriented submanifold, then we write ``$-M$'' for the same point set but with the opposite orientation, in which case
+\begin{equation}
+    \int_{-M}u = -\int_M u
+\end{equation}
+for any $k$-form $u$.
+Finally, the generalized Stokes theorem states that
+\begin{equation}
+    \int_Mdu = \int_{\partial M}u,
+\end{equation}
+which includes the classical Stokes and divergence theorems as special cases.
+
+The space of $k$-\emph{currents}, which we write as $\mathscr C^k\Omega$, is the distributional dual to $\mathscr F_k\Omega$.
+In other words, a $k$-current is a linear operator from $\mathscr F_k\Omega$ to the reals which is continuous with respect to the topology of the space of forms.
+We write $\langle\cdot,\cdot\rangle$ for the dual pairing between the spaces of currents and forms.
+Any differentiable, oriented $k$-dimensional submanifold $M$ defines a current by integration.
+We will abuse notation and use the symbol ``$M$'' to denote both the submanifold and the linear operator on forms, in which case the current $-M$ is the same distributionally as the submanifold with opposite orientation.
+Given a $k$-current $J$, we can define a ``boundary'' of $J$ as acting on $k - 1$-forms by analogy with Stokes' theorem:
+\begin{equation}
+    \langle \partial_kJ, u\rangle = \langle J, d_{k - 1}u\rangle.
+\end{equation}
+Again, if $M$ has a rectifiable boundary then this definition agrees with Stokes' theorem.
+We then find that $\partial_k\partial_{k + 1} = 0$ as a consequence of $d_{k + 1}d_k = 0$.
+This implies that the spaces of currents form a \emph{chain complex}.
+
+The theory of currents allows us to define the sum or difference of two submanifolds not as a point set but by how they act on differential forms.
+A current is \emph{rectifiable} if it arises through integration of forms on a submanifold of finite Hausdorff measure.
+A current is \emph{integral} if it is rectifiable and its boundary is as well.
+
+The definitions above assume that the chain complex terminates at $\mathscr{C}^0$, i.e. continuous linear functionals on the space of scalar fields.
+We will instead include a \emph{bottom} space $\mathscr{C}^{-1} \cong \mathbb{R}$.
+Remembering that the 0-currents are continuous linear functionals on the space of scalar fields, we define the 0-boundary operator as follows:
+\begin{equation}
+    \partial_0 J = \langle J, 1\rangle,
+    \label{eq:0-boundary-operator}
+\end{equation}
+i.e. take the action of $J$ on the constant function $u(x) = 1$.
+We then have that $\partial_0\partial_1J = 0$ because $d1 = 0$.
+If $J$ is a rectifiable 0-current, then $J$ must have the form
+\begin{equation}
+    J = \sum_ia_i\delta_{x_i}
+\end{equation}
+for some finite collection of points $\{x_i\}$.
+Then
+\begin{equation}
+    \partial_0J = \sum_i a_i.
+\end{equation}
+Requiring that $\partial_0\partial_1 = 0$ then implies, for example, that rectifiable 1-currents have to be a sum of circles or curves that goes from one point to another point.
+
+A mesh or polytopal complex is a collection $\{C_{-1}, C_0, \ldots, C_n\}$ such that (1) each $C_k$ is a finite-dimensional $\mathbb{Z}$-submodule of the space of integral $k$-currents on $\Omega$ and (2) the complex is closed under taking boundaries, i.e. for any $M$ in $C_k$, there exist integers $c_i$ and currents $N_i$ in $C_{k - 1}$ such that
+\begin{equation}
+    \partial M = \sum_ic_iN_i.
+\end{equation}
+
 \bibliography{chain-complexes.bib}
 
 \end{document}
