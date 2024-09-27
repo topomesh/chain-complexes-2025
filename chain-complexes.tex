@@ -616,7 +616,7 @@ Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
 % =====================
 \section{Demonstration}
 
-As a proof of concept, we developed a Python package called \emph{topomesh} which implements the transformations defined above.
+As a proof of concept, we developed a Python package called \emph{zmsh} which implements the transformations defined above.
 The main external dependency is numpy for matrix algebra and array operations.
 For geometric predicates, we compute determinants using interval arithmetic; if the result interval contains zero, we try again with exact rationals.
 We then implemented several common algorithms in computational geometry using the linear-algebraic representation of topological transformations described in the previous section.
@@ -743,41 +743,82 @@ By contrast, the CavityCDT algorithm described in \cite{cheng2013delaunay} requi
 % -------------------------------------
 \subsection{Multi-face retriangulation}
 
-Finally, we implemented part of the multi-face retriangulation transformation described in \cite{misztal2009tetrahedral}.
-This transformation is assumed to operate on the suspension of a set of filling triangles.
+Finally, we implemented part of the multi-face removal and retriangulation transformations described in \cite{misztal2009tetrahedral}.
+These transformations are assumed to operate on the suspension of a set of filling triangles.
 In \cite{misztal2009tetrahedral}, the filling triangles are identified via a search procedure and are then transformed into another triangulation of the same polygon using Klincsek's algorithm \cite{klincsek1980minimal}.
 Here we focus entirely on the transformation step and assume that we are given both the filling triangles and the tetrahedra that they fill.
-The goal is to take the suspension $S_1$ of a set of triangles and replace it with the suspension $S_2$ of a given set of triangles $T_2$.
 
+For multi-face re-triangulation, the goal is to take the suspension $S_1$ of a set of triangles and replace it with the suspension $S_2$ of a given set of triangles $T_2$.
 The Python source code for our implementation is shown in Figure \ref{fig:mfrt-code}.
-We tested the implementation by repeatedly generating two random triangulations of a polygon of $n$ vertices for $n = 4, 5, \ldots, 10$.
-We form the suspension of the first set of triangles and apply a random permutation and sign flip.
-The test is to see whether we can match its boundary to the boundary of the suspension of the second triangulation.
+The implementation is correct if it can find an isomorphism between the boundary subcomplexes of $S_1$ and the suspension of $T_2$.
+
+For multi-face removal, the goal is to take the suspension $S_1$ of a set of triangles $T_1$ and (1) merge the triangles of $T_1$ into a single polygon $P$, (2) form the cone of the cone of $P$, and (3) replace $S_1$ with its complement in the iterated cone of $P$.
+The implementation is correct if the original triangles are no longer present in the final tetrahedralization, there is an edge connecting the apexes of the suspension, and if the two boundaries are isomorphic.
+See Figure \ref{fig:edge-insertion} for an illustration.
+The source code is in Figure \ref{fig:mfrt-code}.
+
+We evaluated the correctness of both procedures by running a set of randomized test cases.
+To make the inputs, we generate random triangulations of a polygon of $n$ vertices for $n = 4, 5, \ldots, 10$.
+We then form the suspension of these triangles and apply a random permutation and sign flip.
+This permutation and sign flip is included because, in realistic 3D meshes, it is not generally the case that the triangular filling of a set of tetrahedra that we wish to transform is coherently oriented.
+In other words, two tetrahedra should have opposite incidence to their common triangle, but two triangles need not have opposite incidence to their common edge.
+For multi-face retriangulation, we generate a second random triangulation of the same polygon as the other input.
+Our implementations passed all of the randomized tests according to the correctness criteria outlined above for both problems.
+
+The main takeaway here is that the transformation code shown in Figure \ref{fig:mfrt-code} is very concise and doesn't require deeply-nested loops with large bodies.
+These routines do rely on other pre-defined library functions such as procedures to compute the closure of a complex and to find isomorphisms, but these procedures are easy to specify and test in isolation.
 
 \begin{figure}[t]
 \begin{minted}[fontsize=\footnotesize,linenos]{python}
 import numpy as np
-from topomesh import polygonal
-Topology = list[np.ndarray]
+from numpy import flatnonzero as nonzero, count_nonzero
+from zmsh.polytopal import (
+    closure, subcomplex, merge,
+    join_vertex, join_vertices,
+    find_isomorphism, Topology,
+)
 
 def boundary_complex(T: Topology) -> Topology:
-    num_cells = T[-1].shape[1]
-    C = T[-1] @ np.ones(num_cells)
-    face_ids = np.flatnonzero(C)
-    cell_ids = polygonal.closure(T[:-1], face_ids)
-    return polygonal.subcomplex(T[:-1], cell_ids)
+    face_ids = nonzero(T[-1].sum(axis=1))
+    cell_ids = closure(T[:-1], face_ids)
+    return subcomplex(T[:-1], cell_ids)
 
 def retriangulate(
     S_1: Topology,
     T_2: Topology,
 ) -> Topology:
     dS_1 = boundary_complex(S_1)
-    S_2 = polygonal.join_vertices(T_2)
+    S_2 = join_vertices(T_2)
     dS_2 = boundary_complex(S_2)
-    return polygonal.find_isomorphism(dS_1, dS_2)
+    return S_2, find_isomorphism(dS_1, dS_2)
+
+def multi_face_removal(
+    S: Topology, face_ids: list[int]
+) -> Topology:
+    # Merge the triangle filling into a polygon
+    cells_ids = closure(S[:-1], face_ids)
+    d_0, d_1, d_2 = subcomplex(S[:-1], cells_ids)
+    interior_edge_ids = \
+        nonzero(count_nonzero(d_2, axis=1) == 2)
+    s = merge(poly, interior_edge_ids)
+    d_2 = (d_2 @ s).reshape((-1, 1))
+
+    # Form the iterated cone of the polygon and
+    # return the complement of its suspension
+    cone = join_vertex([d_0, d_1, d_2])
+    f_0, f_1, f_2, f_3, f_4 = join_vertex(cone)
+    return [f_0, f_1, f_2, f_3[:, 2:]]
 \end{minted}
-    \caption{Source code for multi-face retriangulation.}
+\caption{Source code for multi-face retriangulation and multi-face removal.}
 \label{fig:mfrt-code}
+\end{figure}
+
+\begin{figure}[t]
+    \begin{center}
+        \includegraphics[width=0.98\linewidth]{figures/multi-face.pdf}
+    \end{center}
+    \caption{A randomly-generated triangulation of a polygon, its suspension, and the interior facets after multi-face removal / edge insertion.}
+    \label{fig:edge-insertion}
 \end{figure}
 
 
