@@ -90,6 +90,15 @@ An informal definition of the incidence number is
 This informal definition is enough for the constructions that follow.
 For example, if $e = \langle v_0, v_1\rangle$ is an edge connecting the vertices $v_0$ and $v_1$, then $[e, v_0] = -1$ and $[e, v_1] = +1$.
 Likewise, if we consider a positively-oriented triangle $t = \langle v_0, v_1, v_2\rangle$, then the incidence number of $t$ to the edges $\langle v_0, v_1\rangle$, $\langle v_1, v_2\rangle$, and $\langle v_2, v_0\rangle$ are all positive.
+The most important property of incidence numbers is that, if $\omega$ is a $k + 1$-cell and $\tau$ is a $k - 1$-cell, then
+\begin{equation}
+    \sum_\sigma[\omega,\sigma]\cdot[\sigma,\tau] = 0
+    \label{eq:incidence-coefficient-sum}
+\end{equation}
+where the sum is over all $k$-cells $\sigma$.
+This is a property that requires proof for different classes of cell types.
+The proofs for simplices and cubes use only combinatorial facts about taking faces of these cells; the proof for general polytopes is more involved \cite{hatcher2002algebraic, massey2019basic}.
+We will assume this property in the following.
 
 % TODO: Add labels to the figure and the boundary matrices, see
 % https://tex.stackexchange.com/a/59732
@@ -126,25 +135,36 @@ Likewise, if we consider a positively-oriented triangle $t = \langle v_0, v_1, v
 \end{figure}
 
 Let $n_k$ be the number of cells of $\Omega$ of dimension $k$.
-Suppose additionally that we have numbered all of the $k - 1$-cells as $\{\tau_i\}_{i = 1}^{n_{k - 1}}$ and the $k$-cells as $\{\sigma_j\}_{j = 1}^{n_k}$.
-The $k$-th boundary matrix $\partial_k$ is an integer matrix of size $n_{k - 1} \times n_k$.
-The $i, j$ entry of this matrix is
+Suppose that we have numbered all of the cells, so the $k$-cells can be enumerated as $\{\sigma_j\}_{j = 1}^{n_k}$.
+We associate to the set of all $k$-dimensional cells a $\mathbb{Z}$-module $C^k\Omega$ of dimension $n_k$.
+Each $k$-cell $\sigma_j$ corresponds to the $j$-th standard basis vector $e_j$.
+These modules are called the \emph{chain spaces} and an element of a chain space is referred to as a chain or a $k$-chain.
+
+Now we can define the boundary operators, which are linear mappings from $k$-chains to $k - 1$-chains:
+\begin{equation}
+    \partial_k : C^k\Omega \to C^{k - 1}\Omega.
+\end{equation}
+The representation of a boundary operator in the basis described above is an $n_{k - 1} \times n_k$ matrix; its entries are the incidence coefficients.
+Suppose that the $k - 1$-cells are enumerated as $\{\tau_i\}_{i = 1}^{n_{k - 1}}$.
+The $i, j$ entry of the matrix $\partial_k$ is then
 \begin{equation}
     (\partial_k)_{ij} = [\sigma_j, \tau_i].
 \end{equation}
-These operators act on certain spaces of \emph{chains} but the theory behind this will not be important for the following.
-By reading off columns of each boundary matrix, we can quickly determine which $k - 1$-cells are faces of a given $k$-cell and how they are attached.
+By reading off columns of each boundary matrix, we can see which $k - 1$-cells are faces of a given $k$-cell and how they are attached.
 To continue with the example above, we might say that if $e = \langle v_0, v_1\rangle$ is an edge, then $\partial e = +v_1 - v_0$.
 Likewise, if $t = \langle v_0, v_1, v_2\rangle$ is a triangle, then $\partial t = \langle v_0, v_1\rangle + \langle v_1, v_2\rangle + \langle v_2, v_0\rangle$.
 Figure \ref{fig:two-triangle-chain-complex} shows the boundary matrices for two adjacent triangles.
 
-\textbf{The most important fact about boundary operators is that the boundary of a boundary is always equal to zero:}
+Equation \eqref{eq:incidence-coefficient-sum} lets us prove the most important fact about the boundary operators.
+\textbf{The boundary of a boundary is always equal to zero:}
 \begin{equation}
     \partial_k\cdot\partial_{k + 1} = 0.
     \label{eq:ddzero}
 \end{equation}
 This relation has to be proved in each case from certain basic facts about incidence numbers.
-For formal proofs, see \cite{hatcher2002algebraic} for the simplicial case and \cite{massey2019basic} for the cubical and general cases.
+
+A collection of modules $\{C^k\}$ together with linear operators $\partial_k : C^k \to C^{k - 1}$ that satisfy equation \eqref{eq:ddzero} is called a \emph{chain complex}.
+From a polytopal complex one can get a chain complex, but chain complexes can be studied on their own.
 
 There is one final definition that will clarify a later construction at a critical juncture.
 The definitions above assume that the mesh terminates at the points or 0-dimensional cells.
