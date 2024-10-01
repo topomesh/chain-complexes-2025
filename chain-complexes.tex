@@ -140,7 +140,10 @@ We associate to the set of all $k$-dimensional cells a $\mathbb{Z}$-module $C^k\
 Each $k$-cell $\sigma_j$ corresponds to the $j$-th standard basis vector $e_j$.
 These modules are called the \emph{chain spaces} and an element of a chain space is referred to as a chain or a $k$-chain.
 
-Now we can define the boundary operators, which are linear mappings from $k$-chains to $k - 1$-chains:
+The utility of chains is that taking the boundary of a cell is a one-to-many relation -- a single simplex or cube has many faces.
+A vector with non-zero entries corresponding to these faces summarizes which cells are in the boundary, and their signs describe the incidence.
+The boundary operators extend this notion beyond a single cell to a linear combination of cells, i.e. a chain.
+The boundary operators are linear mappings from $k$-chains to $k - 1$-chains:
 \begin{equation}
     \partial_k : C^k\Omega \to C^{k - 1}\Omega.
 \end{equation}
@@ -161,7 +164,6 @@ Equation \eqref{eq:incidence-coefficient-sum} lets us prove the most important f
     \partial_k\cdot\partial_{k + 1} = 0.
     \label{eq:ddzero}
 \end{equation}
-This relation has to be proved in each case from certain basic facts about incidence numbers.
 
 A collection of modules $\{C^k\}$ together with linear operators $\partial_k : C^k \to C^{k - 1}$ that satisfy equation \eqref{eq:ddzero} is called a \emph{chain complex}.
 From a polytopal complex one can get a chain complex, but chain complexes can be studied on their own.
@@ -181,7 +183,7 @@ We can then define the 0-boundary operator $\partial_0$ as a row vector of all 1
 The condition that $\partial_0\partial_1 = 0$ now implies that the boundary of every edge has one positive and one negative vertex: $\partial e = v_i - v_j$ for some $i$, $j$.
 We cannot have that, say, $\partial e = v_i + v_j$.
 This outcome would be undesirable but we have not explicitly forbidden it otherwise.
-Equation \eqref{eq:0-boundary-matrix} will reappear when we define the split transformation.
+Equation \eqref{eq:0-boundary-matrix} will reappear when we define the topological cone.
 
 The boundary matrices do not capture important geometric data describing how cells are embedded into Euclidean space.
 We could have the same connectivity structure for two different triangular meshes, one which uses only piecewise linear facets and another that uses curved polynomial mappings.
