@@ -383,17 +383,24 @@ Having written down the explicit formulas \eqref{eq:cone-partial-k} and \eqref{e
 % ------------------
 \subsection{Merging}
 
-A \emph{merge} of a set of $k$-cells replaces them with a single cell (provided that their union is simply-connected).
+A \emph{merge} of a set of $k$-cells replaces them with a single cell.
 Merging is a column operation on the matrix $\partial_k$.
 In the simplest case, the result column is the sum of all the columns to be merged, but in general we might need to flip some signs:
 \begin{align}
-    \partial_k' & = \partial_k\cdot\text{diag}(s_0, \ldots, s_m)\cdot\mathbbm{1}, \\
-    \partial_{k + 1}' & = \left[\begin{matrix} 0 \ldots 1 \ldots 0\end{matrix}\right]\partial_{k + 1}. \label{eq:merge-k+1}
+    \partial_k' & = \partial_k\cdot\cdot s, \\
+    \partial_{k + 1}' & = e_i^*\cdot\partial_{k + 1}. \label{eq:merge-k+1}
 \end{align}
-where $s_i$ are all $\pm 1$.
+where $e_i$ is again the $i$-th standard basis vector and the entries $s_i$ of the vector $s$ are all $\pm 1$.
 The signs are chosen so that any higher-dimensional cell $\sigma$ has the same incidence with respect to any of the cells $\tau$ to be merged.
 The transformation to the rows of $\partial_{k + 1}$ collapses all incidence to any of the desired $k$-cells into incidence to the merged $k$-cell.
 For merging cells of top dimension $n$, there are no higher-dimensional cells to apply equation \eqref{eq:merge-k+1} to and this step is left out.
+
+We can also write a merge as a bistellar move, in which case the extended boundary matrices are:
+\begin{align}
+    \partial_k' & = \left[\begin{matrix}-\partial_k & \partial_k\cdot s\end{matrix}\right]  = \partial_k\cdot\left[\begin{matrix} -I & s\end{matrix}\right]\\
+    \partial_{k + 1}' & = \left[\begin{matrix}\partial_{k + 1} \\ e_i^*\partial_{k + 1}\end{matrix}\right] = \left[\begin{matrix} I \\ -e_i^*\end{matrix}\right]\partial_{k + 1}
+\end{align}
+and the $k + 2$-boundary matrix, if any, is unaltered.
 
 \emph{Edge collapsing}, the key transformation in surface simplification algorithms \cite{gueziec1995surface}, is a merge of two vertices.
 
