@@ -32,7 +32,9 @@
 \abstract{This paper will show some new approaches for implementing common transformations to the connectivity or topology of an unstructured mesh.
 The key enabling technology for our approach is to borrow ideas from algebraic topology: we use the \emph{boundary operators} of a \emph{chain complex} to represent the mesh.
 Boundary operators are really just integer matrices.
-By representing the objects of study using the language of linear algebra, we can use linear algebraic reasoning and intuition to define transformations.}
+By representing the objects of study using the language of linear algebra, we can use linear algebraic reasoning and intuition to define transformations.
+We show how to implement a few common transformations on the boundary operator representation: merging cells, splitting cells on a new vertex, and splitting a cell on facets.
+The source code for these transformations becomes short and easy to test.}
 
 \keywords{mesh generation, computational geometry, algebraic topology}
 
