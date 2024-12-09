@@ -55,7 +55,6 @@ Are there other mesh data structures that make common algorithms easier to imple
 The idea of \emph{linear-algebraic representation} is to describe the mesh topology using a sequence of linear operators between certain vector spaces or modules.
 The idea comes from algebraic topology: the linear operators are the \emph{boundary operators} on a certain \emph{chain complex}.
 \textbf{If we can describe the mesh topology using linear algebra, then we can transform it using linear algebra as well.}
-This viewpoint has been adopted in several publications on meshing and solid modeling \cite{dicarlo2007solid}, \cite{dicarlo2014linear}, \cite{mueller2017ternary}, \cite{paoluzzi2020topological}.
 Other domains of science and engineering have seized on the idea of using linear algebra as the common language for building applications as well.
 For example, the GraphBLAS project aims to implement common algorithms in graph theory using linear algebra \cite{mattson2013standards}.
 
@@ -63,6 +62,27 @@ This paper will show three transformations on the linear-algebraic representatio
 The main advantage of this linear-algebraic approach is that the transformation kernels are easy to write down and to code.
 We show how other higher-level transformations can be implemented in terms of these primitive operations.
 Finally, as a proof-of-concept, we implemented algorithms for computing convex hulls in arbitrary dimensions and constrained Delaunay triangulations in 2D.
+
+
+
+% ====================
+\section{Related work}
+
+The key innovation of this paper is using chain complexes to implement certain topological transformations, mainly bistellar flips.
+Many previous works have used bistellar flips and a few have used chain complexes.
+To our knowledge, no work has combined both.
+
+Nearly all methods for improving the quality of a mesh by transforming its topology use bistellar flips \cite{freitag1997tetrahedral, klingner2008aggressive, misztal2009tetrahedral, hu2018tetrahedral}.
+One notable exception is polyhedron reconnection \cite{marot2020reviving}.
+These works all assume a half-edge or array-based data structure to describe a simplicial complex.
+
+The closest work to ours is DiCarlo and others \cite{dicarlo2007solid}, which defines the Euler operators and a bisection operator on chain complexes.
+The operators defined in this paper work on only two cells at a time; ours operate on an arbitrary number of cells.
+Other papers use chain complexes to implement Catmull-Clark subdivision \cite{mueller2017ternary} or to compute arrangements \cite{paoluzzi2020topological}.
+
+Our main results are explicit formulas for certain transformations in arbitrary dimensions.
+These are equations \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} for vertex splits; \eqref{eq:merge-k+1} for merges; and \eqref{eq:face-split-partial-n} and \eqref{eq:face-split-s-f0} for face splits.
+These formulas have not appeared in the literature before.
 
 
 
@@ -534,6 +554,7 @@ Now we make the ansatz that the transformed $n$-boundary matrix will have one co
 In all, the new matrix will have the form
 \begin{equation}
     \partial_n' = \left[\begin{matrix}[F_0, P_1] & \cdots & [F_0, P_m] \\ [F_1, P] & & \\ & \ddots & \\ & & [F_m, P]\end{matrix}\right]
+    \label{eq:face-split-partial-n}
 \end{equation}
 where the incidences $[F_0, P_i]$ need to be solved for.
 The incidences $[F_i, P]$ are the same as in the initial polytope.
@@ -541,6 +562,7 @@ If we can show that $\sum_i[F_0, P_i]\mathbbm{1} = 0$, then the boundary of the 
 To preserve the fundamental equation $\partial\partial = 0$, we need that
 \begin{equation}
     [S, F_0][F_0, P_i] = -[S, F_i][F_i, P]
+    \label{eq:face-split-s-f0}
 \end{equation}
 for each $i$.
 We can then attempt to find a solution of this collection of linear systems of equations.
