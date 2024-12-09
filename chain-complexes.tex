@@ -59,7 +59,7 @@ This viewpoint has been adopted in several publications on meshing and solid mod
 Other domains of science and engineering have seized on the idea of using linear algebra as the common language for building applications as well.
 For example, the GraphBLAS project aims to implement common algorithms in graph theory using linear algebra \cite{mattson2013standards}.
 
-This paper will show three transformations on the linear-algebraic represention of a polygonal mesh: (1) splitting a cell on a vertex, (2) merging adjacent cells, and (3) subdividing a cell along a collection of facets.
+This paper will show three transformations on the linear-algebraic representation of a polygonal mesh: (1) splitting a cell on a vertex, (2) merging adjacent cells, and (3) subdividing a cell along a collection of facets.
 The main advantage of this linear-algebraic approach is that the transformation kernels are easy to write down and to code.
 We show how other higher-level transformations can be implemented in terms of these primitive operations.
 Finally, as a proof-of-concept, we implemented algorithms for computing convex hulls in arbitrary dimensions and constrained Delaunay triangulations in 2D.
@@ -389,7 +389,7 @@ A \emph{merge} of a set of $k$-cells replaces them with a single cell.
 Merging is a column operation on the matrix $\partial_k$.
 In the simplest case, the result column is the sum of all the columns to be merged, but in general we might need to flip some signs:
 \begin{align}
-    \partial_k' & = \partial_k\cdot\cdot s, \\
+    \partial_k' & = \partial_k\cdot s, \\
     \partial_{k + 1}' & = e_i^*\cdot\partial_{k + 1}. \label{eq:merge-k+1}
 \end{align}
 where $e_i$ is again the $i$-th standard basis vector and the entries $s_i$ of the vector $s$ are all $\pm 1$.
