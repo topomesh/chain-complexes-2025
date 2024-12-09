@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
-from topomesh import polygonal, delaunay
+from zmsh import delaunay
 
 points = np.array(
     [
@@ -31,7 +31,7 @@ d_2 = np.ones((len(edges), 1), dtype=np.int8)
 d_2[5] = 0
 
 queue = [list(range(len(edges)))[::-1]]
-machine = delaunay.RetriangulationMachine([d_0, d_1, d_2], points, queue)
+machine = delaunay.Retriangulation([d_0, d_1, d_2], points, queue)
 
 edge_sets = [np.array(edges)]
 while not machine.is_done():
