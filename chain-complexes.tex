@@ -3,13 +3,18 @@
 \usepackage{imr}
 \usepackage{graphicx}
 \usepackage{amsfonts}
-\usepackage{bbm}       % for \mathbbm{1}
+\usepackage{bbm}         % for \mathbbm{1}
 \usepackage{amsmath}
-\usepackage{mathrsfs}  % for \mathscr
-\usepackage{minted}    % for including source code
+\usepackage{mathrsfs}    % for \mathscr
+\usepackage{minted}      % for including source code
+\usepackage{nicematrix}  % for labelled matrix columns/rows
+\NiceMatrixOptions{
+code-for-first-row=\scriptscriptstyle,
+code-for-last-col=\scriptscriptstyle
+}
 \usemintedstyle{sas}
 \usepackage{tikz}
-\usetikzlibrary{decorations.markings}
+\usetikzlibrary{decorations.markings, calc}
 
 \def\thepage {}
 \bibliographystyle{imr}
@@ -77,7 +82,7 @@ One notable exception is polyhedron reconnection \cite{marot2020reviving}.
 These works all assume a half-edge or array-based data structure to describe a simplicial complex.
 
 The closest work to ours is DiCarlo and others \cite{dicarlo2007solid}, which defines the Euler operators and a bisection operator on chain complexes.
-The operators defined in this paper work on only two cells at a time; ours operate on an arbitrary number of cells.
+The operators defined in that paper work on only two cells at a time; ours operate on an arbitrary number of cells.
 Other papers use chain complexes to implement Catmull-Clark subdivision \cite{mueller2017ternary} or to compute arrangements \cite{paoluzzi2020topological}.
 
 Our main results are explicit formulas for certain transformations in arbitrary dimensions.
@@ -134,25 +139,28 @@ We will assume this property in the following.
     \begin{minipage}{0.48\linewidth}
         {\small
             \begin{equation*}
-                \partial_1 = \left[\begin{smallmatrix}
-                    - &   & + & - &   \\
-                    + & - &   &   & + \\
-                      & + & - &   &   \\
-                      &   &   & + & -
-                \end{smallmatrix}\right]
+                \partial_1 = \begin{bNiceArray}{ccccc}[small, first-row, last-col]
+                    \mathrm a & \mathrm b & \mathrm c & \mathrm d & \mathrm e &   \\
+                      & + & - &   &   & 0 \\
+                    - &   & + & - &   & 1 \\
+                    + & - &   &   & + & 2 \\
+                      &   &   & + & - & 3
+                \end{bNiceArray}
             \end{equation*}
             \begin{equation*}
-                \partial_2 = \left[\begin{smallmatrix}
-                    \textcolor{red!65}+ & \textcolor{blue!65}- \\
-                    \textcolor{red!65}+ &   \\
-                    \textcolor{red!65}+ &   \\
-                      & \textcolor{blue!65}+ \\
-                      & \textcolor{blue!65}+
-                \end{smallmatrix}\right]
+                \partial_2 = \begin{bNiceArray}{cc}[small, first-row, last-col]
+                    \mathrm A & \mathrm B &   \\
+                    + & - & \mathrm a \\
+                    + &   & \mathrm b \\
+                    + &   & \mathrm c \\
+                      & + & \mathrm d \\
+                      & + & \mathrm e
+                \end{bNiceArray}
             \end{equation*}
         }
     \end{minipage}
-    \caption{Pair of adjacent triangles (left) and their boundary matrices (right).}
+    \caption{Pair of adjacent triangles (left) and their boundary matrices (right).
+    Vertices are labelled with numbers, edges with lower-case letters, and polygons with upper-case letters.}
     \label{fig:two-triangle-chain-complex}
 \end{figure}
 
@@ -469,38 +477,41 @@ The Bowyer-Watson algorithm for computing Delaunay triangulations and all common
     \end{center}
 
     \begin{equation*}
-        \partial_1 = \left[\begin{smallmatrix}
-            - &   &   & + \\
-            + & - &   &   \\
-              & + & - &   \\
-              &   & + & -
-        \end{smallmatrix}\right],
+        \partial_1 = \begin{bNiceArray}{cccc}[small, first-row, last-col]
+            \mathrm a & \mathrm b & \mathrm c & \mathrm d & \\
+            - &   &   & + & 0 \\
+            + & - &   &   & 1 \\
+              & + & - &   & 2 \\
+              &   & + & - & 3
+        \end{bNiceArray}\; ,
         \quad
-        \partial_2 = \left[\begin{smallmatrix}
-            + \\ + \\ + \\ +
-        \end{smallmatrix}\right]
+        \partial_2 = \begin{bNiceArray}{c}[small, first-row, last-col]
+            \mathrm A & \\ + & \mathrm a \\ + & \mathrm b \\ + & \mathrm c \\ + & \mathrm d
+        \end{bNiceArray}
     \end{equation*}
 
     \begin{equation*}
-        \partial_1' = \left[\begin{smallarray}{cccc|cccc}
-            - &   &   & + & + &   &   &   \\
-            + & - &   &   &   & + &   &   \\
-              & + & - &   &   &   & + &   \\
-              &   & + & - &   &   &   & + \\
+        \partial_1' = \begin{bNiceArray}{cccc|cccc}[small, first-row, last-col]
+            \mathrm a & \mathrm b & \mathrm c & \mathrm d & \mathrm e & \mathrm f & \mathrm g & \mathrm h & \\
+            - &   &   & + & + &   &   &   & 0 \\
+            + & - &   &   &   & + &   &   & 1 \\
+              & + & - &   &   &   & + &   & 2 \\
+              &   & + & - &   &   &   & + & 3 \\
             \hline
-              &   &   &   & - & - & - & -
-        \end{smallarray}\right], \quad
-        \partial_2' = \left[\begin{smallarray}{cccc}
-            + &   &   &   \\
-              & + &   &   \\
-              &   & + &   \\
-              &   &   & + \\
+              &   &   &   & - & - & - & - & 4
+        \end{bNiceArray}\; , \quad
+        \partial_2' = \begin{bNiceArray}{cccc}[small, first-row, last-col]
+            \mathrm A & \mathrm B & \mathrm C & \mathrm D & \\
+            + &   &   &   & \mathrm a \\
+              & + &   &   & \mathrm b \\
+              &   & + &   & \mathrm c \\
+              &   &   & + & \mathrm d \\
             \hline
-            + &   &   & - \\
-            - & + &   &   \\
-              & - & + &   \\
-              &   & - & +
-        \end{smallarray}\right]
+            + &   &   & - & \mathrm e \\
+            - & + &   &   & \mathrm f \\
+              & - & + &   & \mathrm g \\
+              &   & - & + & \mathrm h
+        \end{bNiceArray}
     \end{equation*}
 
     \caption{Quadrilateral before and after splitting on a new vertex in the center (top) and boundary matrices before and after (bottom).}
@@ -587,10 +598,7 @@ Both the old polytope and the new polytopes are the common boundary of the $n + 
 \begin{equation}
     \partial_n' = \left[\begin{matrix}0 & [F_0, P_1] & \cdots & [F_0, P_m] \\ -[F_1, P] & +[F_1, P] & & \\ & & \ddots & \\ -[F_m, P] & & & +[F_m, P]\end{matrix}\right]
 \end{equation}
-and
-\begin{equation}
-    \partial_{n + 1}' = \mathbbm{1}.
-\end{equation}
+and $\partial_{n + 1}' = \mathbbm{1}$.
 We then remove the $n + 1$-dimensional cell and the original $n$-cells.
 
 Finally, observe that the size of the linear system \eqref{eq:face-split-normal-eqn} is equal to the number of faces of the separator $F_0$.
@@ -617,16 +625,16 @@ Let $\{\partial_0, \partial_1, \partial_2\}$ be the boundary matrices of the fil
 We will take the cone of this polytopal complex twice, which will lift it into 4D.
 The boundary matrices of the first cone are
 \begin{equation}
-    \partial_1' = \left[\begin{matrix}\partial_1 & I \\ & -\mathbbm{1}^*\end{matrix}\right],
-    \;\partial_2' = \left[\begin{matrix}\partial_2 & I \\ & -\partial_1\end{matrix}\right],
-    \;\partial_3' = \left[\begin{matrix}-I \\ \partial_2\end{matrix}\right]
+    \partial_1' = \left[\begin{smallmatrix}\partial_1 & I \\ & -\mathbbm{1}^*\end{smallmatrix}\right],
+    \;\partial_2' = \left[\begin{smallmatrix}\partial_2 & I \\ & -\partial_1\end{smallmatrix}\right],
+    \;\partial_3' = \left[\begin{smallmatrix}-I \\ \partial_2\end{smallmatrix}\right]
 \end{equation}
 and the boundary matrices of the iterated cone are
 \begin{align}
-    \partial_1'' & = \left[\begin{matrix}\partial_1 & I & I & \\ & -\mathbbm{1}^* & &\textcolor{purple}{+1} \\ & & -\mathbbm{1}^* & \textcolor{purple}{-1}\end{matrix}\right], \label{eq:double-cone-partial1} \\
-    \partial_2'' & = \left[\begin{matrix}\partial_2 & I & I & \\ & -\partial_1 & & I \\ & & -\partial_1 & -I \\ & & & -\mathbbm{1}^*\end{matrix}\right],\label{eq:double-cone-partial2} \\
-        \partial_3'' & = \left[\begin{matrix}\textcolor{orange}{-I} & \textcolor{orange}{+I} & \\ \textcolor{orange}{+\partial_2} & & \textcolor{teal}{+I} \\ & \textcolor{orange}{-\partial_2} & \textcolor{teal}{-I} \\ & & \textcolor{teal}{\partial_1}\end{matrix}\right],\label{eq:double-cone-partial3} \\
-    \partial_4'' & = \left[\begin{matrix} I \\ I \\ -\partial_2\end{matrix}\right].\label{eq:double-cone-partial4}
+    & \partial_1'' = \left[\begin{smallmatrix}\partial_1 & I & I & \\ & -\mathbbm{1}^* & &\textcolor{purple}{+1} \\ & & -\mathbbm{1}^* & \textcolor{purple}{-1}\end{smallmatrix}\right], \quad
+    \partial_2'' = \left[\begin{smallmatrix}\partial_2 & I & I & \\ & -\partial_1 & & I \\ & & -\partial_1 & -I \\ & & & -\mathbbm{1}^*\end{smallmatrix}\right],\nonumber \\
+    & \qquad \partial_3'' = \left[\begin{smallmatrix}\textcolor{orange}{-I} & \textcolor{orange}{+I} & \\ \textcolor{orange}{+\partial_2} & & \textcolor{teal}{+I} \\ & \textcolor{orange}{-\partial_2} & \textcolor{teal}{-I} \\ & & \textcolor{teal}{\partial_1}\end{smallmatrix}\right],\quad
+        \partial_4'' = \left[\begin{smallmatrix} I \\ I \\ -\partial_2\end{smallmatrix}\right].\label{eq:double-cone-partial4}
 \end{align}
 Notice the first two columns of $\partial_3''$, highlighted in orange -- these are identical to equation \eqref{eq:suspension-partial-n+1} for the top boundary matrix of a suspension.
 In other words, the starting state for multi-face removal and the ending state of edge removal are both isomorphic to a sub-complex of the iterated cone.

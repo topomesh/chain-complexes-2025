@@ -4,20 +4,29 @@
     \coordinate (p3) at (2, 2){};
     \coordinate (p4) at (0, 2){};
 
-    \draw[fill=blue!35] (p1) -- (p2) -- (p3) -- cycle;
-    \draw[fill=red!35] (p1) -- (p3) -- (p4) -- cycle;
+    \node[] at ($(p1)!0.5!(p2)$) (p12) {d};
+    \node[] at ($(p2)!0.5!(p3)$) (p23) {e};
+    \node[] at ($(p3)!0.5!(p4)$) (p34) {b};
+    \node[] at ($(p4)!0.5!(p1)$) (p41) {c};
+    \node[] at ($(p1)!0.5!(p3)$) (p13) {a};
+
     \begin{scope}[
         very thick,
-        decoration={markings, mark=at position 0.5 with {\arrow{>}}}
+        decoration={markings, mark=at position 0.75 with {\arrow{>}}}
     ]
-        \draw[postaction={decorate}] (p1) -- (p2);
-        \draw[postaction={decorate}] (p2) -- (p3);
-        \draw[postaction={decorate}] (p3) -- (p4);
-        \draw[postaction={decorate}] (p4) -- (p1);
-        \draw[postaction={decorate}] (p1) -- (p3);
+        \draw[postaction={decorate}] (p1) -- (p12) -- (p2);
+        \draw[postaction={decorate}] (p2) -- (p23) -- (p3);
+        \draw[postaction={decorate}] (p3) -- (p34) -- (p4);
+        \draw[postaction={decorate}] (p4) -- (p41) -- (p1);
+        \draw[postaction={decorate}] (p1) -- (p13) -- (p3);
     \end{scope}
-    \foreach \p in {p1, p2, p3, p4} {
-        \filldraw (\p) circle (3pt);
-    }
+
+    \filldraw (p1) circle (3pt) node[anchor=east]{1};
+    \filldraw (p2) circle (3pt) node[anchor=west]{3};
+    \filldraw (p3) circle (3pt) node[anchor=west]{2};
+    \filldraw (p4) circle (3pt) node[anchor=east]{0};
+
+    \draw (1, 1.35) node{A};
+    \draw (2, 0.65) node{B};
 \end{tikzpicture}
 
