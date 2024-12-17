@@ -904,8 +904,9 @@ Boundary operators are useful for describing non-simplicial intermediate states 
     \label{fig:parallel-mesh}
 \end{figure}
 
-We focused entirely on serial algorithms where the goal was to produce a simplicial mesh.
-Doing large-scale 3D finite element analysis, however, requires the mesh to be decomposed into subdomains that are then distributed to different processes.
+We focused here on serial algorithms where the goal was to produce a simplicial mesh.
+Chain complexes and the transformations that we defined here are also applicable to hex or poly meshing and this is the subject of future work.
+Moreover, doing large-scale 3D finite element analysis requires the mesh to be decomposed into subdomains that are then distributed to different processes.
 The connectivity between these subdomains does not necessarily have a simplicial or cubical structure.
 We can then describe the overall topology hierarchically -- a simplicial representation for the connectivity inside a domains, and a polytopal complex for the connectivity among domains, as shown in Figure \ref{fig:parallel-mesh}.
 The incidence numbers can then be supplemented with a bidirectional map describing the association between integer cell IDs in one domain with their IDs in the neighboring domain.
