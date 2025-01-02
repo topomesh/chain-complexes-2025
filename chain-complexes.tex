@@ -251,7 +251,7 @@ If we re-order the vertices of $\sigma$ by some permutation $p$, then we get the
 \begin{equation}
     \langle v_{p(0)},\ldots,v_{p(k)}\rangle = \text{parity}(p)\cdot\langle v_0,\ldots, v_k\rangle
 \end{equation}
-The incidence number from $\sigma$ to the face $\tau = \langle v_0, \ldots, \hat v_j, \ldots, v_k\rangle$ obtained by removing the $j$th vertex is positive if $j$ is even and negative if $j$ is odd, or
+The incidence number from $\sigma$ to the face $\tau = \langle v_0, \ldots, \hat v_j, \ldots, v_k\rangle$ obtained by removing the $j$th vertex is positive if $j$ is even and negative if $j$ is odd:
 \begin{equation}
     [\sigma, \tau] = (-1)^j.
     \label{eq:simplicial-incidence-numbers}
@@ -518,6 +518,25 @@ The Bowyer-Watson algorithm for computing Delaunay triangulations and all common
     \label{fig:split-transformation}
 \end{figure}
 
+\begin{figure}[ht]
+    \tikzset{ec/.style={every coordinate/.try}}
+
+    \begin{center}
+        \input{figures/flip-triangles.tikz}
+    \end{center}
+
+    \begin{center}
+        \input{figures/tetrahedra.tikz}
+    \end{center}
+
+    \caption{2-2 and 2-3 flips implemented as sequences of merges and splits.
+    The vertex added in the split step is deleted when the two edges are merged in the final transformation.
+    We've shown the tetrahedra in an ``exploded'' view to help with visualization.}
+    \label{fig:2-2-flip}
+\end{figure}
+
+More transformations can be obtained by combining splits and merges; figure \ref{fig:2-2-flip} shows how to perform flips in 2D and 3D.
+
 % -------------------------
 \subsection{Face-splitting}
 
@@ -645,32 +664,6 @@ The fact that the end states of either operation are both complementary componen
 First, find an isomorphism of the starting tetrahedra with a subcomplex of the iterated cone.
 Then remove the starting tetrahedra; the remainder are the desired final state.
 If we take the original 2D filling faces to be a single triangle, then the previous equations give an alternative implementation of 2 $\leftrightarrow$ 3 face flips.
-
-% -----------------------
-\subsection{Combinations}
-
-More transformations can be defined by combining a sequence of any of the above.
-For example, Figure \ref{fig:2-2-flip} shows how to perform a 2-2 flip in 2D by first splitting the quadrilateral into four triangles and then performing a sequence of merges.
-Figure \ref{fig:2-3-flip} shows the same process for a 2-3 flip in 3D.
-(We've shown an initial merge step for illustrative purposes, but this merge is actually part of the subsequent split.)
-
-\begin{figure}[t]
-    \tikzset{ec/.style={every coordinate/.try}}
-
-    \begin{center}
-        \input{figures/flip-triangles.tikz}
-    \end{center}
-    \caption{A 2-2 flip, implemented as a sequence of merges and splits.
-    The vertex added by splitting the quadrilateral is deleted when the two edges are merged in the final transformation.}
-    \label{fig:2-2-flip}
-
-    \begin{center}
-        \input{figures/tetrahedra.tikz}
-    \end{center}
-    \caption{A 2-3 flip implemented as a sequence of merges and splits.
-    We've shown the tetrahedra in an ``exploded'' view to help with visualization.}
-    \label{fig:2-3-flip}
-\end{figure}
 
 
 
@@ -804,7 +797,7 @@ By contrast, the CavityCDT algorithm described in \cite{cheng2013delaunay} requi
 % -------------------------------------
 \subsection{Multi-face retriangulation}
 
-Finally, we implemented part of the multi-face removal and retriangulation transformations described in \cite{misztal2009tetrahedral}.
+We implemented part of the multi-face removal and retriangulation transformations described in \cite{misztal2009tetrahedral}.
 These transformations are assumed to operate on the suspension of a set of filling triangles.
 In \cite{misztal2009tetrahedral}, the filling triangles are identified via a search procedure and are then transformed into another triangulation of the same polygon using Klincsek's algorithm \cite{klincsek1980minimal}.
 Here we focus entirely on the transformation step and assume that we are given both the filling triangles and the tetrahedra that they fill.
@@ -882,6 +875,63 @@ def multi_face_removal(
     \label{fig:edge-insertion}
 \end{figure}
 
+% ------------------------
+\subsection{Edge collapse}
+
+\begin{figure}[ht]
+    \begin{minted}[fontsize=\footnotesize,linenos]{python}
+def edge_collapse(
+    D: Topology, vertex_ids: int
+) -> Topology:
+    # Form the matrix for the initial edge collapse
+    P = np.eye(D[1].shape[0], dtype=np.int8)
+    P[np.ix_(vertex_ids, vertex_ids)] = \
+        np.array([[1, 1], [0, 0]])
+
+    # Remove redundant and empty cells
+    E = [D[0].copy(), P @ D[1], *D[2:]]
+    for k in range(1, n := len(D) - 1):
+        A, B = make_reduction_matrices(E[k])
+        E[k], E[k + 1] = E[k] @ A, B @ E[k + 1]
+
+    empty_cell_ids = \
+        nonzero(count_nonzero(E[-1], axis=0) <= n)
+    E[-1] = np.delete(E[-1], empty_cell_ids, axis=1)
+    return E
+    \end{minted}
+    \caption{The source code the edge collapse transformation.
+    The routine \texttt{make\_reduction\_matrices} (not shown) forms the row and column operations to remove redundant cells.}
+    \label{fig:edge-collapse-code}
+\end{figure}
+
+\begin{figure}[ht]
+    \begin{center}
+        \includegraphics[width=0.8\linewidth]{figures/edge-collapse.pdf}
+    \end{center}
+    \caption{Edge collapsing before (a) and after (b) in the ideal case.
+    In a bad case (c) we can compute the topology but the resulting geometry is always invalid (d).}
+    \label{fig:edge-collapse}
+\end{figure}
+
+Finally, we implemented the edge collapse operation used in mesh simplification \cite{gueziec1995surface}.
+This procedure is error-prone enough on edge-based data structures that some authors have resorted to using SMT solvers \cite{papadakis2017seam}.
+The source code is shown in figure \ref{fig:edge-collapse-code}.
+
+An edge collapse merges two vertices $v_0$, $v_1$ into one.
+We implemented this in three phases.
+First, we sum the rows in $\partial_1$ corresponding to $v_0$ and $v_1$ together; call the merged vertex $v^*$.
+This step creates a host of degeneracies.
+If we had a third vertex $u$ and edges $e_0 = \langle u, v_0\rangle,$ $e_1 = \langle u, v_1\rangle$, then after this first step we are left with two copies of the edge $\langle u, v^*\rangle$.
+From a linear algebra perspective, the columns corresponding to the two copies are scalar multiples of each other.
+In the second phase, we apply column operations to $\partial_1$ to remove such redundant edges and row operations to $\partial_2$ to collapse any adjacency to the redundant edges down to one remaining representative.
+We then repeat this procedure at each higher dimension.
+This elimination procedure is equivalent to a merge operation but applied to the dual complex.
+Finally, we remove any $k$-cells with fewer than $k + 1$ faces.
+
+The results of the edge collapse operation on a simple and a less-simple case are shown in figure \ref{fig:edge-collapse}.
+The first case is straightforward and produces well-shaped triangles.
+In the second case, we can compute the collapsed topology, but the resulting geometry is invalid because it introduces triangles of zero or negative area.
+Mesh simplification algorithms have to detect and reject these cases \cite{gueziec1995surface}.
 
 % ==================
 \section{Conclusion}
@@ -895,20 +945,11 @@ Once the transformed patch is computed, it can be translated back to a set of si
 We adopted this approach in our implementation of each of the algorithms described above.
 Boundary operators are useful for describing non-simplicial intermediate states of a transformation; they are not space-optimal for describing an entire simplicial complex.
 
-\begin{figure}[t]
-    \begin{center}
-        \includegraphics[width=0.9\linewidth]{figures/parallel-mesh.pdf}
-    \end{center}
-    \caption{A triangular mesh, partitioned for parallel execution; the thick lines are the subdomain boundaries.
-    The domain interiors are simplicial, but the connectivity between domains are polytopal.}
-    \label{fig:parallel-mesh}
-\end{figure}
-
 We focused here on serial algorithms where the goal was to produce a simplicial mesh.
 Chain complexes and the transformations that we defined here are also applicable to hex or poly meshing and this is the subject of future work.
 Moreover, doing large-scale 3D finite element analysis requires the mesh to be decomposed into subdomains that are then distributed to different processes.
 The connectivity between these subdomains does not necessarily have a simplicial or cubical structure.
-We can then describe the overall topology hierarchically -- a simplicial representation for the connectivity inside a domains, and a polytopal complex for the connectivity among domains, as shown in Figure \ref{fig:parallel-mesh}.
+We can then describe the overall topology hierarchically -- a simplicial representation for the connectivity inside a domains, and a polytopal complex for the connectivity among domains.
 The incidence numbers can then be supplemented with a bidirectional map describing the association between integer cell IDs in one domain with their IDs in the neighboring domain.
 
 We showed how to implement two common topological operations for tetrahedral mesh improvement.
