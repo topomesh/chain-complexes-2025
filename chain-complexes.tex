@@ -53,7 +53,7 @@ The source code for these transformations becomes short and easy to test.}
 
 Nearly all constructions in unstructured meshing require the ability to perform local transformations to the mesh topology.
 For example, to compute the Delaunay triangulation, the Lawson algorithm uses a sequence of edge flips, while the Bowyer-Watson algorithm is based on splitting star-shaped polytopes along a vertex \cite{cheng2013delaunay}.
-Algorithms for mesh coarsening, on the other hand, apply a sequence of edge or face collapses \cite{cignoni1998comparison}.
+Algorithms for mesh coarsening, on the other hand, apply a sequence of edge or face collapses \cite{gueziec1995surface}.
 Implementing these low-level transformation kernels on common mesh data structures can be difficult and error-prone.
 Are there other mesh data structures that make common algorithms easier to implement?
 
@@ -87,8 +87,11 @@ Other papers use chain complexes to implement Catmull-Clark subdivision \cite{mu
 
 Our main results are explicit formulas for certain transformations in arbitrary dimensions.
 These are equations \eqref{eq:cone-partial-k} and \eqref{eq:cone-partial-n+1} for vertex splits; \eqref{eq:merge-k+1} for merges; and \eqref{eq:face-split-partial-n} and \eqref{eq:face-split-s-f0} for face splits.
-These formulas have not appeared in the literature before.
-
+These formulas have not appeared in the meshing literature before.
+Equation \eqref{eq:cone-partial-k} has appeared in the homological algebra literature \cite{gelfand1994homological} but not for practical computation.
+The GAP and polymake packages both include routines for computing topological cones and performing bistellar moves on simplicial complexes \cite{gawrilow2000polymake, bjorner2000simplicial, effenberger2011simpcomp}.
+But both of these packages use array-based data structures rather than the linear-algebraic representation.
+Finally, these routines are not used for meshing as such but to find homeomorphisms of piecewise-linear manifolds.
 
 
 % ==============
@@ -397,12 +400,6 @@ A 0-simplex is a single point, and a $k + 1$-simplex is the cone of a single poi
 Choosing the normalization factor $(-1)^n$ makes the repeated cone construction isomorphic to the positively-oriented simplex through a sequence of permutations and sign flips.
 With no normalization at all, the even-dimensional simplices under the cone construction are instead isomorphic to the standard construction \emph{but with the opposite orientation}.
 
-The constructions above are not new.
-Equation \eqref{eq:cone-partial-k} has appeared before in the literature on homological algebra \cite{gelfand1994homological}.
-The simpcomp package of the GAP system includes routines for computing topological cones of abstract simplicial complexes and for performing bistellar moves \cite{bjorner2000simplicial, effenberger2011simpcomp}.
-The polymake library also includes routines for bistellar moves \cite{gawrilow2000polymake}.
-Both simpcomp and polymake include these features for determining when two simplicial complexes are piecewise linear-homeomorphic, not for computational meshing.
-The utility of the topological cone for computational meshing, which we demonstrate below, has not appeared elsewhere as far as we know.
 
 
 % =======================
@@ -628,14 +625,14 @@ When there is only one face, the linear system reduces to a scalar equation and 
 
 The simplest topological transformations used in tetrahedral mesh improvement are 2-3, 3-2, and 4-4 face flips \cite{cheng2013delaunay}.
 These transformations work on a relatively small number of tetrahedra at a time.
-Several publications have argued that two families of transformations, edge removal and multi-face removal, give superior results for increasing common mesh quality measures \cite{shewchuk2002two, klingner2008aggressive}.
+Several publications have argued that two families of transformations, edge removal and multi-face removal, give superior results for increasing common mesh quality measures \cite{klingner2008aggressive}.
 A third transformation, multi-face retriangulation, can be written as a composition of multi-face removal followed by edge removal in order to retriangulate a polygon \cite{misztal2009tetrahedral}.
 These transformations operate on many more tetrahedra at a time, but are, according to an author of a popular mesh generator, ``particularly tedious to implement'' \cite{marot2020reviving}.
 Here we show how to implement these transformations on the linear algebraic representation of the mesh.
 
 Both transformations operate on tetrahedra that are assumed to have special structure.
-The starting mesh for multi-face removal is assumed to consist of a set of triangles that are sandwiched between a pair of vertices, to use the terminology of \cite{shewchuk2002two}.
-The result is a set of tetrahedra that all meet at a common central edge (the toothpick?).
+The starting mesh for multi-face removal is assumed to consist of a set of triangles that are sandwiched between a pair of vertices.
+The result is a set of tetrahedra that all meet at a common central edge.
 Edge removal goes in the opposite direction.
 In either case, we can observe that the sandwich scenario is really the topological suspension of the filling, i.e. the join with two vertices.
 We will exhibit both of these states as parts of the boundary of a higher-dimensional polytope.
@@ -799,7 +796,7 @@ By contrast, the CavityCDT algorithm described in \cite{cheng2013delaunay} requi
 
 We implemented part of the multi-face removal and retriangulation transformations described in \cite{misztal2009tetrahedral}.
 These transformations are assumed to operate on the suspension of a set of filling triangles.
-In \cite{misztal2009tetrahedral}, the filling triangles are identified via a search procedure and are then transformed into another triangulation of the same polygon using Klincsek's algorithm \cite{klincsek1980minimal}.
+In \cite{misztal2009tetrahedral}, the filling triangles are identified via a search procedure and are then transformed into another triangulation of the same polygon.
 Here we focus entirely on the transformation step and assume that we are given both the filling triangles and the tetrahedra that they fill.
 
 For multi-face re-triangulation, the goal is to take the suspension $S_1$ of a set of triangles and replace it with the suspension $S_2$ of a given set of triangles $T_2$.
@@ -945,24 +942,23 @@ Once the transformed patch is computed, it can be translated back to a set of si
 We adopted this approach in our implementation of each of the algorithms described above.
 Boundary operators are useful for describing non-simplicial intermediate states of a transformation; they are not space-optimal for describing an entire simplicial complex.
 
-We focused here on serial algorithms where the goal was to produce a simplicial mesh.
-Chain complexes and the transformations that we defined here are also applicable to hex or poly meshing and this is the subject of future work.
-Moreover, doing large-scale 3D finite element analysis requires the mesh to be decomposed into subdomains that are then distributed to different processes.
+We focused here on serial algorithms to produce a simplicial mesh.
+The transformations that we defined here are also applicable to hex or poly meshing.
+Moreover, large-scale 3D finite element analysis requires the mesh to be decomposed into subdomains that are then distributed to different processes.
 The connectivity between these subdomains does not necessarily have a simplicial or cubical structure.
-We can then describe the overall topology hierarchically -- a simplicial representation for the connectivity inside a domains, and a polytopal complex for the connectivity among domains.
-The incidence numbers can then be supplemented with a bidirectional map describing the association between integer cell IDs in one domain with their IDs in the neighboring domain.
+We can then describe the overall topology hierarchically -- a simplicial representation inside a domains and a polytopal complex between domains.
 
 We showed how to implement two common topological operations for tetrahedral mesh improvement.
 These operations assume a particular structure for the tetrahedra that they operate on.
 The \emph{small polyhedron reconnection} (SPR) approach, on the other hand, works on any set of input tetrahedra at the cost of a more expensive search step \cite{marot2020reviving}.
-The linear-algebraic representation might have the potential to accelerate SPR by instead bisecting cavities into smaller polytopes that only become simplicial by the end.
-Given a sensible polytope quality measure, the branch and bound procedure over polytopes might be faster or easier to implement than its counterpart over tetrahedra.
+The linear-algebraic representation might be able to accelerate SPR by instead bisecting cavities into smaller polytopes that only become simplicial by the end.
+The branch and bound procedure over polytopes might be faster or easier to implement than its counterpart over tetrahedra.
 
-We checked that the constructions defined here work as expected by testing that we could compute convex hulls, Delaunay triangulations, etc.
-We did not give formal proofs that each operation is guaranteed to result in a topologically valid end state given certain preconditions.
+We evaluated our code correctness by testing that we could compute convex hulls, Delaunay triangulations, etc.
+We did not give formal proofs that each operation is guaranteed to result in a topologically valid end state.
 For example, applying the face-split transformation assumes that a certain integer linear system is solvable.
-Are there cases where this system has either no solution or multiple solutions despite the fact that the polytope is splittable?
-Are there cases where the system does have a unique solution but not one that produces the desired final topology?
+Are there cases where this system has either no solution or multiple solutions but the polytope is splittable?
+Are there cases where the system has a unique solution but not one that produces the desired final topology?
 We found empirically that the linear system was solvable in all the cases that we tried and gave the expected results.
 But an interesting future direction would be to use formal methods to verify these transformations using established results, for example on total unimodularity of boundary matrices \cite{dey2010optimal}.
 
