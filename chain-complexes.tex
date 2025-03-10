@@ -1,11 +1,17 @@
-\documentclass[twocolumn]{article}
+\documentclass[twocolumn,leqno,twocolumn]{article}
 
-\usepackage{imr}
+\usepackage[letterpaper]{geometry}
+
+\usepackage{ltexpprt}
+\usepackage{hyperref}
+\usepackage{algpseudocode}
+
+%\usepackage{imr}
 \usepackage{graphicx}
 \usepackage{amsfonts}
 \usepackage{bbm}         % for \mathbbm{1}
 \usepackage{amsmath}
-\usepackage{mathrsfs}    % for \mathscr
+\usepackage{cleveref}
 \usepackage{minted}      % for including source code
 \usepackage{nicematrix}  % for labelled matrix columns/rows
 \NiceMatrixOptions{
@@ -16,8 +22,8 @@ code-for-last-col=\scriptscriptstyle
 \usepackage{tikz}
 \usetikzlibrary{decorations.markings, calc}
 
-\def\thepage {}
-\bibliographystyle{imr}
+%\bibliographystyle{imr}
+\bibliographystyle{siam}
 
 \newenvironment{smallarray}[1]
  {\null\,\vcenter\bgroup\scriptsize
@@ -28,24 +34,22 @@ code-for-last-col=\scriptscriptstyle
 
 \begin{document}
 
-\title{Linear-algebraic representation and transformation of unstructured meshes}
-\author{Daniel Shapero$^1$}
-\date{
-    $^1$University of Washington, Seattle, WA, USA, shapero@uw.edu
-}
+\title{\Large Linear-algebraic representation and transformation of unstructured meshes}
+\author{Daniel Shapero\thanks{University of Washington, Seattle, WA. shapero@uw.edu}}
+\date{}
 
-\abstract{This paper will show some new approaches for implementing common transformations to the connectivity or topology of an unstructured mesh.
+\maketitle
+
+\fancyfoot[R]{\scriptsize{Copyright \textcopyright\ 2025\\
+Copyright for this paper is retained by authors}}
+
+\begin{abstract} \small\baselineskip=9pt This paper will show some new approaches for implementing common transformations to the connectivity or topology of an unstructured mesh.
 The key enabling technology for our approach is to borrow ideas from algebraic topology: we use the \emph{boundary operators} of a \emph{chain complex} to represent the mesh.
 Boundary operators are really just integer matrices.
 By representing the objects of study using the language of linear algebra, we can use linear algebraic reasoning and intuition to define transformations.
 We show how to implement a few common transformations on the boundary operator representation: merging cells, splitting cells on a new vertex, and splitting a cell on facets.
-The source code for these transformations becomes short and easy to test.}
-
-\keywords{mesh generation, computational geometry, algebraic topology}
-
-\maketitle
-\thispagestyle{empty}
-\pagestyle{empty}
+The source code for these transformations becomes short and easy to test.
+\end{abstract}
 
 
 % ====================
@@ -701,7 +705,7 @@ The very concise source code for \texttt{join\_vertex} shown here is an example.
 We do not claim that using the linear-algebraic representation has superior performance characteristics to the conventional approach based on applying transformations directly to the simplicial data type.
 
 \begin{figure}
-    \begin{minted}[fontsize=\footnotesize,linenos]{python}
+    \begin{minted}[fontsize=\footnotesize]{python}
 import numpy as np
 
 Topology = list[np.ndarray]
@@ -820,7 +824,7 @@ The main takeaway here is that the transformation code shown in Figure \ref{fig:
 These routines do rely on other pre-defined library functions such as procedures to compute the closure of a complex and to find isomorphisms, but these procedures are easy to specify and test in isolation.
 
 \begin{figure}[t]
-\begin{minted}[fontsize=\footnotesize,linenos]{python}
+\begin{minted}[fontsize=\footnotesize]{python}
 import numpy as np
 from numpy import flatnonzero as nonzero, count_nonzero
 from zmsh.polytopal import (
@@ -876,7 +880,7 @@ def multi_face_removal(
 \subsection{Edge collapse}
 
 \begin{figure}[ht]
-    \begin{minted}[fontsize=\footnotesize,linenos]{python}
+    \begin{minted}[fontsize=\footnotesize]{python}
 def edge_collapse(
     D: Topology, vertex_ids: int
 ) -> Topology:
@@ -911,7 +915,7 @@ def edge_collapse(
 \end{figure}
 
 Finally, we implemented the edge collapse operation used in mesh simplification \cite{gueziec1995surface}.
-This procedure is error-prone enough on edge-based data structures that some authors have resorted to using SMT solvers \cite{papadakis2017seam}.
+This procedure is error-prone enough on edge-based data structures that some authors have resorted to SMT solvers \cite{papadakis2017seam}.
 The source code is shown in figure \ref{fig:edge-collapse-code}.
 
 An edge collapse merges two vertices $v_0$, $v_1$ into one.
@@ -944,8 +948,8 @@ Boundary operators are useful for describing non-simplicial intermediate states 
 
 We focused here on serial algorithms to produce a simplicial mesh.
 The transformations that we defined here are also applicable to hex or poly meshing.
-Moreover, large-scale 3D finite element analysis requires the mesh to be decomposed into subdomains that are then distributed to different processes.
-The connectivity between these subdomains does not necessarily have a simplicial or cubical structure.
+Moreover, 3D finite element analysis often requires decomposing the mesh into subdomains for distributing to multiple processes.
+The connectivity between subdomains usually does not have a simplicial or cubical structure.
 We can then describe the overall topology hierarchically -- a simplicial representation inside a domains and a polytopal complex between domains.
 
 We showed how to implement two common topological operations for tetrahedral mesh improvement.
@@ -954,13 +958,13 @@ The \emph{small polyhedron reconnection} (SPR) approach, on the other hand, work
 The linear-algebraic representation might be able to accelerate SPR by instead bisecting cavities into smaller polytopes that only become simplicial by the end.
 The branch and bound procedure over polytopes might be faster or easier to implement than its counterpart over tetrahedra.
 
-We evaluated our code correctness by testing that we could compute convex hulls, Delaunay triangulations, etc.
-We did not give formal proofs that each operation is guaranteed to result in a topologically valid end state.
-For example, applying the face-split transformation assumes that a certain integer linear system is solvable.
+We evaluated our code by testing that we could compute convex hulls, Delaunay triangulations, etc.
+We did not give formal proofs that each operation always produces a valid end state.
+For example, applying the face-split transformation assumes that a certain linear system is solvable.
 Are there cases where this system has either no solution or multiple solutions but the polytope is splittable?
 Are there cases where the system has a unique solution but not one that produces the desired final topology?
 We found empirically that the linear system was solvable in all the cases that we tried and gave the expected results.
-But an interesting future direction would be to use formal methods to verify these transformations using established results, for example on total unimodularity of boundary matrices \cite{dey2010optimal}.
+A future direction would be to use formal methods to verify these transformations using established results, for example on total unimodularity of boundary matrices \cite{dey2010optimal}.
 
 When the objects of study can be represented as linear operators, we can apply linear algebraic reasoning to define transformations and verify that they preserve all of the important invariants.
 The condition in equation \eqref{eq:ddzero} that the product of two boundary operators is zero is a powerful invariant for ensuring the validity of the underlying topology.
@@ -969,7 +973,7 @@ The condition in equation \eqref{eq:ddzero} that the product of two boundary ope
 % =========================
 \section*{Acknowledgements}
 
-Thanks to Matt Knepley, Tobin Isaac, Mauricio del Razo, and Leila de Floriani for many helpful discussions.
+Thanks to Matt Knepley, Tobin Isaac, Mauricio del Razo, Gilbert Bernstein, and Leila de Floriani for many helpful discussions.
 
 
 \bibliography{chain-complexes.bib}
